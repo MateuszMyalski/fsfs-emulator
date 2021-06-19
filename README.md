@@ -1,7 +1,7 @@
 # fsfs-emulator
 
 ## DoD
-- **S**imple **F**ile **S**ystem
+- **F**lash **S**imple **F**ile **S**ystem
   - [ ] - based on chunks of memory that can be selected at the compile time 
     - [ ] - chunk size 1024kb
     - [ ] - chunk size 4096kb
