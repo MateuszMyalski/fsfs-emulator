@@ -5,7 +5,7 @@
   - [ ] - based on chunks of memory that can be selected at the compile time 
     - [ ] - chunk size 1024kb
     - [ ] - chunk size 4096kb
-  - [ ] - C++ style interface
+  - [ ] - C++ style interface (embedded systems friendly)
     - [ ] - `read` - reads selected lenght of data from given inode with respect to given offset
     - [ ] - `write` - writes to inode with selected lenght of data with respect to offset, also allocate another inodes if necessary
     - [ ] - `stats` - print all reports of the file system 
