@@ -2,8 +2,9 @@
 
 ## DoD
 - **F**lash **S**imple **F**ile **S**ystem
-  - [ ] - based on chunks of memory that can be selected at the compile time 
+  - [ ] - based on chunks of memory that can be selected ~~at the compile time~~
     - [ ] - chunk size 1024kb
+    - [ ] - chunk size 2048kb
     - [ ] - chunk size 4096kb
   - [ ] - C++ style interface (embedded systems friendly)
     - [ ] - `read` - reads selected lenght of data from given inode with respect to given offset
@@ -18,8 +19,9 @@
     - [ ] - `remove_block` - remove block from the inode (shirinking files)
   - [ ] - memory cell wear problem optimization
 - Disk space emulator
-  - [ ] - based on chunks of memory that can be selected at the compile time 
+  - [ ] - based on chunks of memory that can be selected ~~at the compile time~~
     - [ ] - chunk size 1024kb
+    - [ ] - chunk size 2048kb
     - [ ] - chunk size 4096kb
   - [ ] C++ style interface
     - [ ] - `open` - opens the file that contains an image of the disk space
