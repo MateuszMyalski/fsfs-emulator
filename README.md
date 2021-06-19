@@ -14,9 +14,8 @@
     - [ ] `mount` - checks the integrity of the file system
     - [ ] `unmount` - free up the disk
     - [ ] `create` - create new inode
-    - [ ] `remove` - mark the inode as not allocated to be overwritten in future
-    - [ ] `remove_hard` - not only mark the inode as free but also overwrite the data
-    - [ ] `remove_block` - remove block from the inode (shirinking files)
+    - [ ] `remove` - mark the inode as not allocated to be overwritten in the future or unlink data block
+    - [ ] `erease` - not only mark the inode as free but also overwrite the data
   - [ ] memory cell wear problem optimization
 - Disk space emulator
   - [ ] based on chunks of memory that can be selected ~~at the compile time~~
