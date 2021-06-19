@@ -46,3 +46,4 @@
 ## Sources - educational/inspiration
 1. https://www3.nd.edu/~pbui/teaching/cse.30341.fa17/project06.html
 2. https://sourceware.org/jffs2/jffs2.pdf
+3. https://www.longdom.org/open-access/nand-flash-memory-organization-and-operations-2165-7866-1000139.pdf
