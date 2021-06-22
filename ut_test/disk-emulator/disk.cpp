@@ -116,7 +116,7 @@ TEST_F(DiskTest, open_invalid_size) {
 TEST_F(DiskTest, write) {
     constexpr v_size w_data_size = block_size * 2;
     data w_data[w_data_size] = {};
-    std::fill_n(w_data, w_data_size, 0xD);
+    std::fill_n(w_data, w_data_size, 0x0D);
 
     test_disk->open(disk_name);
     test_disk->mount();
@@ -136,23 +136,38 @@ TEST_F(DiskTest, write) {
 TEST_F(DiskTest, write_and_read) {
     constexpr v_size r_data_size = block_size * n_blocks;
 
+    data r_data[r_data_size] = {};
     char ref_data[r_data_size] = {};
-    std::fill_n(ref_data, block_size, 0xA);
-    std::fill_n(ref_data + block_size, block_size, 0xB);
+    std::fill_n(ref_data, block_size, 0x0A);
+    std::fill_n(ref_data + block_size, block_size, 0x0B);
 
     recreate_test_file("tmp_disk.img", block_size * n_blocks);
     fill_test_file("tmp_disk.img", 0, ref_data, r_data_size);
 
-    data r_data[r_data_size] = {};
-
     test_disk->open(disk_name);
     test_disk->mount();
     test_disk->write(0, ref_data, r_data_size);
-    test_disk->read(0, r_data, r_data_size);
-    test_disk->unmount();
+
+    auto n_read = test_disk->read(0, r_data, r_data_size);
+
+    ASSERT_EQ(n_read, r_data_size);
 
     for (auto i = 0; i < r_data_size; i++) {
         EXPECT_EQ(ref_data[i], r_data[i]);
     }
+
+    std::fill_n(r_data, r_data_size, 0xFF);
+
+    n_read = test_disk->read(1, r_data, r_data_size);
+    ASSERT_EQ(n_read, block_size * (n_blocks - 1));
+
+    for (auto i = 0; i < n_read; i++) {
+        EXPECT_EQ(ref_data[block_size + i], r_data[i]);
+    }
+    for (auto i = 0; i < block_size; i++) {
+        EXPECT_EQ(static_cast<data>(0xFF), r_data[n_read + i]);
+    }
+
+    test_disk->unmount();
 }
 }

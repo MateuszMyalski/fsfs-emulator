@@ -62,7 +62,7 @@ v_size Disk::read(v_size block_n, data* data_block, v_size data_len) {
     v_size data_overflow = std::min(0, disk_img_size - (offset + data_len));
     data_len -= std::abs(data_overflow);
 
-    disk_img.seekp(offset, disk_img.beg);
+    disk_img.seekg(offset, disk_img.beg);
     disk_img.read(data_block, data_len);
 
     return data_len;
