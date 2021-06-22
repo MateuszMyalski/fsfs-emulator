@@ -1,5 +1,6 @@
 set(MAIN_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-set(MAIN_SOURCE_LIBS lib_cli-emulator lib_file_system)
+#set(MAIN_SOURCE_LIBS lib_cli-emulator lib_file_system)
+set(MAIN_SOURCE_LIBS lib_disk-emulator)
 set(CXX_COMPILER_FLAGS ${COMPILE_FLAGS})
 
 add_executable(${CMAKE_PROJECT_NAME} ${MAIN_SOURCE_FILES})

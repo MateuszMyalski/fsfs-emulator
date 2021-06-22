@@ -1,1 +1,1 @@
-int main(int argc, char *argv[]) { return 1; }
+int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[]) { return 1; }
