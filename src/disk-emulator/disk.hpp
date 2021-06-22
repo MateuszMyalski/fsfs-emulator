@@ -16,7 +16,7 @@ class Disk {
     ~Disk();
     void open(const char* path);
     v_size write(v_size block_n, data* data_block, v_size data_len);
-    v_size read(v_size block_n, data* data_block);
+    v_size read(v_size block_n, data* data_block, v_size data_len);
     v_size size() const { return block_size; };
     static void create(const char* path, v_size n_blocks, v_size block_size);
 
