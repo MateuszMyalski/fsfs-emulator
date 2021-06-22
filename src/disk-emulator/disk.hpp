@@ -8,7 +8,7 @@ class Disk {
    private:
     int32_t mounted;
     v_size block_size;
-    v_size disk_img_size = -1;
+    v_size disk_img_size;
     std::fstream disk_img;
 
    public:
