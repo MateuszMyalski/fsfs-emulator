@@ -91,7 +91,11 @@ TEST_F(DiskTest, mount) {
     EXPECT_FALSE(test_disk->is_mounted());
 }
 
-TEST_F(DiskTest, size) { ASSERT_EQ(test_disk->size(), 1024); }
+TEST_F(DiskTest, block_size) { ASSERT_EQ(test_disk->get_block_size(), 1024); }
+TEST_F(DiskTest, disk_size) {
+    test_disk->open(disk_name);
+    ASSERT_EQ(test_disk->get_disk_size(), n_blocks);
+}
 
 TEST_F(DiskTest, create) {
     ASSERT_EQ(block_size * n_blocks, get_file_size(disk_name));
