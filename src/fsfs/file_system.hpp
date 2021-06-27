@@ -1,16 +1,24 @@
 #ifndef FSFS_FILE_SYSTEM_HPP
 #define FSFS_FILE_SYSTEM_HPP
 #include <common/types.hpp>
+#include <cstring>
+
+#include "data_structs.hpp"
+#include "disk-emulator/disk.hpp"
 namespace FSFS {
 class FileSystem {
    public:
-    static void stats();
+    FileSystem() {
+        mounted_disk.reset(nullptr);
+        std::memset(&MB, -1, sizeof(super_block));
+    };
+    void stats();
 
-    v_size read(v_size inode, uint8_t& data, v_size length, v_size offset);
-    v_size write(v_size inode, uint8_t& data, v_size length, v_size offset);
+    v_size read(v_size inode, data& data, v_size length, v_size offset);
+    v_size write(v_size inode, data& data, v_size length, v_size offset);
 
     void format();
-    void mount(Disk& disk);
+    void mount(disk_ptr disk);
     void unmount();
 
     v_size create();
@@ -18,7 +26,8 @@ class FileSystem {
     v_size erease();
 
    private:
+    disk_ptr mounted_disk;
+    super_block MB;
 };
 }
-
 #endif

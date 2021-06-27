@@ -5,6 +5,8 @@
 
 #include "common/types.hpp"
 namespace FSFS {
+constexpr v_size quant_block_size = 1024;
+
 class Disk {
    private:
     int32_t mounted;
