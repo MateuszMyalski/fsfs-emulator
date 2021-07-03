@@ -20,11 +20,6 @@ void BlockMap::initialize(v_size n_data_blocks, v_size n_inode_blocks) {
         throw std::invalid_argument("Size cannot be equal or lower than 0.");
     }
 
-    if (!disk.is_mounted()) {
-        throw std::runtime_error(
-            "Cannot initialize block map - disk not mounted.");
-    }
-
     this->n_data_blocks = n_data_blocks;
     this->n_inode_blocks = n_inode_blocks;
 

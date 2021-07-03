@@ -10,7 +10,7 @@
 namespace FSFS {
 class FileSystem {
    public:
-    FileSystem(Disk& disk) : disk(disk), block_map(BlockMap(disk)) {
+    FileSystem(Disk& disk) : disk(disk), block_map() {
         std::memset(&MB, -1, sizeof(super_block));
     };
     void stats();

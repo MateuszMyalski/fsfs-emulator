@@ -11,7 +11,6 @@
 namespace FSFS {
 class BlockMap {
    private:
-    Disk& disk;
     v_size n_inode_blocks;
     v_size n_data_blocks;
 
@@ -25,12 +24,12 @@ class BlockMap {
     constexpr static int32_t block_map_line_len =
         std::numeric_limits<uint64_t>::digits;
 
-    BlockMap(Disk& disk) : disk(disk), n_inode_blocks(-1), n_data_blocks(-1){};
+    BlockMap() : n_inode_blocks(-1), n_data_blocks(-1){};
 
     void initialize(v_size n_data_blocks, v_size n_inode_blocks);
 
     template <map_type T>
-    void scan_block();
+    void scan_block(Disk& disk);
 
     template <map_type T>
     void set_block(v_size block_n, block_status status);

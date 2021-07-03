@@ -16,7 +16,7 @@ class BlockMapTest : public ::testing::Test {
    public:
     void SetUp() override {
         dummy_disk = new Disk(block_size);
-        block_map = new BlockMap(*dummy_disk);
+        block_map = new BlockMap();
         dummy_disk->mount();
     }
     void TearDown() override {
@@ -32,10 +32,6 @@ TEST_F(BlockMapTest, initialize_throw) {
                  std::invalid_argument);
 
     block_map->initialize(data_n_blocks, inode_n_blocks);
-
-    dummy_disk->unmount();
-    EXPECT_THROW(block_map->initialize(data_n_blocks, inode_n_blocks),
-                 std::runtime_error);
 }
 
 TEST_F(BlockMapTest, set_inode_block_throw) {
