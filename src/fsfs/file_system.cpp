@@ -6,16 +6,14 @@
 
 namespace FSFS {
 
-void FileSystem::mount(disk_ptr disk) {
-    mounted_disk = std::move(disk);
-    if (mounted_disk->is_mounted()) {
-        mounted_disk.release();
+void FileSystem::mount() {
+    if (disk.is_mounted()) {
         throw std::runtime_error("Disk is already mounted.");
     }
-    mounted_disk->mount();
+    disk.mount();
 
-    auto n_read = mounted_disk->read(
-        super_block_offset, reinterpret_cast<data*>(&MB), sizeof(super_block));
+    auto n_read = disk.read(super_block_offset, reinterpret_cast<data*>(&MB),
+                            sizeof(super_block));
 
     if (n_read != sizeof(super_block)) {
         throw std::runtime_error("Cannot read super block");
@@ -30,15 +28,15 @@ void FileSystem::mount(disk_ptr disk) {
     if (MB.n_blocks <= 0) {
         throw std::runtime_error("Invalid amount of blocks number.");
     }
+
+    // block_map.initialize(MB.block_size, MB.n_blocks);
 }
 
 void FileSystem::unmount() {
-    mounted_disk->unmount();
+    disk.unmount();
 
-    if (mounted_disk->is_mounted()) {
-        mounted_disk.release();
+    if (disk.is_mounted()) {
         throw std::runtime_error("Disk is not fully unmounted.");
     }
-    mounted_disk.release();
 }
 }

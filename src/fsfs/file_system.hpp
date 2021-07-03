@@ -3,13 +3,14 @@
 #include <common/types.hpp>
 #include <cstring>
 
+#include "block_map.hpp"
 #include "data_structs.hpp"
 #include "disk-emulator/disk.hpp"
+
 namespace FSFS {
 class FileSystem {
    public:
-    FileSystem() {
-        mounted_disk.reset(nullptr);
+    FileSystem(Disk& disk) : disk(disk), block_map(BlockMap(disk)) {
         std::memset(&MB, -1, sizeof(super_block));
     };
     void stats();
@@ -18,7 +19,7 @@ class FileSystem {
     v_size write(v_size inode, data& data, v_size length, v_size offset);
 
     void format();
-    void mount(disk_ptr disk);
+    void mount();
     void unmount();
 
     v_size create();
@@ -26,7 +27,8 @@ class FileSystem {
     v_size erease();
 
    private:
-    disk_ptr mounted_disk;
+    Disk& disk;
+    BlockMap block_map;
     super_block MB;
 };
 }

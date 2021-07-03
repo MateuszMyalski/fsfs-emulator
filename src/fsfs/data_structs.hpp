@@ -11,7 +11,7 @@ constexpr v_size meta_block_size = 64;
 // constexpr data super_block_magic_number = 0xDEADC0FU;
 constexpr v_size super_block_offset = 0;
 
-enum class inode_type : data { IN_USE, EMPTY, TO_BE_OVERWRITEN, CORRUPTED };
+enum class block_status : data { USED, FREE };
 
 struct super_block {
     data magic_number[row_size];
@@ -23,7 +23,7 @@ struct super_block {
 static_assert(sizeof(super_block) == meta_block_size);
 
 struct inode_block {
-    inode_type type;
+    block_status type;
     data _padding[3];
     data file_name[32];
     v_size file_len;
