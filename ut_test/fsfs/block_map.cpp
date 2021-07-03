@@ -90,7 +90,7 @@ TEST_F(BlockMapTest, get_data_block_throw) {
     block_map->get_block_status<BlockMap::map_type::DATA>(data_n_blocks - 1);
 }
 
-TEST_F(BlockMapTest, set_and_get_data_block) {
+TEST_F(BlockMapTest, set_and_get_map_line_border) {
     block_map->initialize(data_n_blocks, inode_n_blocks);
 
     EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::DATA>(0),
@@ -99,11 +99,31 @@ TEST_F(BlockMapTest, set_and_get_data_block) {
     EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::DATA>(63),
               block_status::FREE);
 
+    block_map->set_block<BlockMap::map_type::DATA>(64, block_status::USED);
+
     EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::DATA>(64),
-              block_status::FREE);
+              block_status::USED);
 
     EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::DATA>(65),
               block_status::FREE);
+
+    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::INODE>(0),
+              block_status::FREE);
+
+    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::INODE>(63),
+              block_status::FREE);
+
+    block_map->set_block<BlockMap::map_type::INODE>(64, block_status::USED);
+
+    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::INODE>(64),
+              block_status::USED);
+
+    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::INODE>(65),
+              block_status::FREE);
+}
+
+TEST_F(BlockMapTest, set_and_get_data_block) {
+    block_map->initialize(data_n_blocks, inode_n_blocks);
 
     block_map->set_block<BlockMap::map_type::DATA>(block_size - 1,
                                                    block_status::USED);
@@ -126,5 +146,15 @@ TEST_F(BlockMapTest, set_and_get_data_block) {
     EXPECT_EQ(
         block_map->get_block_status<BlockMap::map_type::DATA>(block_size + 1),
         block_status::FREE);
+}
+
+TEST_F(BlockMapTest, set_and_get_inode_block) {
+    block_map->initialize(data_n_blocks, inode_n_blocks);
+
+    block_map->set_block<BlockMap::map_type::INODE>(inode_n_blocks - 1,
+                                                    block_status::USED);
+    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::INODE>(
+                  inode_n_blocks - 1),
+              block_status::USED);
 }
 }
