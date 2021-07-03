@@ -120,5 +120,11 @@ TEST_F(BlockMapTest, set_and_get_data_block) {
     EXPECT_EQ(
         block_map->get_block_status<BlockMap::map_type::DATA>(block_size + 2),
         block_status::FREE);
+
+    block_map->set_block<BlockMap::map_type::DATA>(block_size + 1,
+                                                   block_status::FREE);
+    EXPECT_EQ(
+        block_map->get_block_status<BlockMap::map_type::DATA>(block_size + 1),
+        block_status::FREE);
 }
 }
