@@ -38,7 +38,7 @@ void Disk::create(const char* path, v_size n_blocks, v_size block_size) {
     disk.write("", 1);
 }
 
-v_size Disk::write(v_size block_n, data* data_block, v_size data_len) {
+v_size Disk::write(v_size block_n, const data* data_block, v_size data_len) {
     if (!(disk_img.is_open() && is_mounted())) {
         return -1;
     }
@@ -48,7 +48,7 @@ v_size Disk::write(v_size block_n, data* data_block, v_size data_len) {
     data_len -= std::abs(data_overflow);
 
     disk_img.seekp(offset, disk_img.beg);
-    disk_img.write(data_block, data_len);
+    disk_img.write(reinterpret_cast<const char*>(data_block), data_len);
 
     return data_len;
 }
@@ -63,7 +63,7 @@ v_size Disk::read(v_size block_n, data* data_block, v_size data_len) {
     data_len -= std::abs(data_overflow);
 
     disk_img.seekg(offset, disk_img.beg);
-    disk_img.read(data_block, data_len);
+    disk_img.read(reinterpret_cast<char*>(data_block), data_len);
 
     return data_len;
 }

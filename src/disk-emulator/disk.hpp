@@ -18,7 +18,7 @@ class Disk {
     Disk(v_size block_size);
     ~Disk();
     void open(const char* path);
-    v_size write(v_size block_n, data* data_block, v_size data_len);
+    v_size write(v_size block_n, const data* data_block, v_size data_len);
     v_size read(v_size block_n, data* data_block, v_size data_len);
     v_size get_block_size() const { return block_size; };
     v_size get_disk_size() const { return (disk_img_size / block_size); };

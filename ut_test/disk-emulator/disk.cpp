@@ -45,11 +45,11 @@ class DiskTest : public ::testing::Test {
         created_files.push_back(file_name);
     }
 
-    void fill_test_file(std::string_view file_name, int32_t offset, char* data,
+    void fill_test_file(std::string_view file_name, int32_t offset, data* data,
                         int32_t len) {
         std::fstream file(file_name.data(), std::ios::out | std::ios::binary);
         file.seekp(offset);
-        file.write(data, len);
+        file.write(reinterpret_cast<char*>(data), len);
         file.close();
     }
 
@@ -141,7 +141,7 @@ TEST_F(DiskTest, write_and_read) {
     constexpr v_size r_data_size = block_size * n_blocks;
 
     data r_data[r_data_size] = {};
-    char ref_data[r_data_size] = {};
+    data ref_data[r_data_size] = {};
     std::fill_n(ref_data, block_size, 0x0A);
     std::fill_n(ref_data + block_size, block_size, 0x0B);
 

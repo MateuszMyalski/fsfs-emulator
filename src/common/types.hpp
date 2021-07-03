@@ -3,7 +3,7 @@
 #include <stdint.h>
 namespace FSFS {
 typedef int32_t v_size;
-typedef char data;
+typedef uint8_t data;
 }
 
 #endif

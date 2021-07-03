@@ -8,7 +8,7 @@ namespace FSFS {
 constexpr int32_t row_size = sizeof(v_size);
 constexpr v_size meta_block_size = 64;
 
-// constexpr data super_block_magic_number = 0xDEADC0FU;
+const data magic_number_lut[] = {0xDE, 0xAD, 0xC0, 0xDE};
 constexpr v_size super_block_offset = 0;
 
 enum class block_status : data { USED, FREE };
@@ -19,7 +19,8 @@ struct super_block {
     v_size block_size;
     v_size n_blocks;
     v_size n_inode_blocks;
-    data _padding[45];
+    v_size n_data_blocks;
+    data _padding[43];
 };
 static_assert(sizeof(super_block) == meta_block_size);
 

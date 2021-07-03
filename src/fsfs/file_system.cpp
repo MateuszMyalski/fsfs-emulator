@@ -24,12 +24,11 @@ void FileSystem::mount() {
     if ((MB.block_size % quant_block_size) != 0) {
         throw std::runtime_error("Block size must be multiplication of 1024.");
     }
-
     if (MB.n_blocks <= 0) {
         throw std::runtime_error("Invalid amount of blocks number.");
     }
 
-    // block_map.initialize(MB.block_size, MB.n_blocks);
+    block_map.initialize(MB.n_data_blocks, MB.n_inode_blocks);
 }
 
 void FileSystem::unmount() {
