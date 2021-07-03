@@ -41,120 +41,107 @@ TEST_F(BlockMapTest, initialize_throw) {
 TEST_F(BlockMapTest, set_inode_block_throw) {
     block_map->initialize(data_n_blocks, inode_n_blocks);
 
-    EXPECT_THROW(block_map->set_block<BlockMap::map_type::INODE>(
-                     inode_n_blocks, block_status::FREE),
+    EXPECT_THROW(block_map->set_block<map_type::INODE>(inode_n_blocks,
+                                                       block_status::FREE),
                  std::invalid_argument);
-    EXPECT_THROW(
-        block_map->set_block<BlockMap::map_type::INODE>(-1, block_status::FREE),
-        std::invalid_argument);
+    EXPECT_THROW(block_map->set_block<map_type::INODE>(-1, block_status::FREE),
+                 std::invalid_argument);
 
-    block_map->set_block<BlockMap::map_type::INODE>(inode_n_blocks - 1,
-                                                    block_status::FREE);
+    block_map->set_block<map_type::INODE>(inode_n_blocks - 1,
+                                          block_status::FREE);
 }
 
 TEST_F(BlockMapTest, set_data_block_throw) {
     block_map->initialize(data_n_blocks, inode_n_blocks);
 
-    EXPECT_THROW(block_map->set_block<BlockMap::map_type::DATA>(
-                     data_n_blocks, block_status::FREE),
-                 std::invalid_argument);
     EXPECT_THROW(
-        block_map->set_block<BlockMap::map_type::DATA>(-1, block_status::FREE),
+        block_map->set_block<map_type::DATA>(data_n_blocks, block_status::FREE),
         std::invalid_argument);
+    EXPECT_THROW(block_map->set_block<map_type::DATA>(-1, block_status::FREE),
+                 std::invalid_argument);
 
-    block_map->set_block<BlockMap::map_type::DATA>(data_n_blocks - 1,
-                                                   block_status::FREE);
+    block_map->set_block<map_type::DATA>(data_n_blocks - 1, block_status::FREE);
 }
 
 TEST_F(BlockMapTest, get_inode_block_throw) {
     block_map->initialize(data_n_blocks, inode_n_blocks);
 
-    EXPECT_THROW(
-        block_map->get_block_status<BlockMap::map_type::INODE>(inode_n_blocks),
-        std::invalid_argument);
-    EXPECT_THROW(block_map->get_block_status<BlockMap::map_type::INODE>(-1),
+    EXPECT_THROW(block_map->get_block_status<map_type::INODE>(inode_n_blocks),
+                 std::invalid_argument);
+    EXPECT_THROW(block_map->get_block_status<map_type::INODE>(-1),
                  std::invalid_argument);
 
-    block_map->get_block_status<BlockMap::map_type::INODE>(inode_n_blocks - 1);
+    block_map->get_block_status<map_type::INODE>(inode_n_blocks - 1);
 }
 
 TEST_F(BlockMapTest, get_data_block_throw) {
     block_map->initialize(data_n_blocks, inode_n_blocks);
 
-    EXPECT_THROW(
-        block_map->get_block_status<BlockMap::map_type::DATA>(data_n_blocks),
-        std::invalid_argument);
-    EXPECT_THROW(block_map->get_block_status<BlockMap::map_type::DATA>(-1),
+    EXPECT_THROW(block_map->get_block_status<map_type::DATA>(data_n_blocks),
+                 std::invalid_argument);
+    EXPECT_THROW(block_map->get_block_status<map_type::DATA>(-1),
                  std::invalid_argument);
 
-    block_map->get_block_status<BlockMap::map_type::DATA>(data_n_blocks - 1);
+    block_map->get_block_status<map_type::DATA>(data_n_blocks - 1);
 }
 
 TEST_F(BlockMapTest, set_and_get_map_line_border) {
     block_map->initialize(data_n_blocks, inode_n_blocks);
 
-    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::DATA>(0),
+    EXPECT_EQ(block_map->get_block_status<map_type::DATA>(0),
               block_status::FREE);
 
-    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::DATA>(63),
+    EXPECT_EQ(block_map->get_block_status<map_type::DATA>(63),
               block_status::FREE);
 
-    block_map->set_block<BlockMap::map_type::DATA>(64, block_status::USED);
+    block_map->set_block<map_type::DATA>(64, block_status::USED);
 
-    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::DATA>(64),
+    EXPECT_EQ(block_map->get_block_status<map_type::DATA>(64),
               block_status::USED);
 
-    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::DATA>(65),
+    EXPECT_EQ(block_map->get_block_status<map_type::DATA>(65),
               block_status::FREE);
 
-    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::INODE>(0),
+    EXPECT_EQ(block_map->get_block_status<map_type::INODE>(0),
               block_status::FREE);
 
-    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::INODE>(63),
+    EXPECT_EQ(block_map->get_block_status<map_type::INODE>(63),
               block_status::FREE);
 
-    block_map->set_block<BlockMap::map_type::INODE>(64, block_status::USED);
+    block_map->set_block<map_type::INODE>(64, block_status::USED);
 
-    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::INODE>(64),
+    EXPECT_EQ(block_map->get_block_status<map_type::INODE>(64),
               block_status::USED);
 
-    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::INODE>(65),
+    EXPECT_EQ(block_map->get_block_status<map_type::INODE>(65),
               block_status::FREE);
 }
 
 TEST_F(BlockMapTest, set_and_get_data_block) {
     block_map->initialize(data_n_blocks, inode_n_blocks);
 
-    block_map->set_block<BlockMap::map_type::DATA>(block_size - 1,
-                                                   block_status::USED);
-    EXPECT_EQ(
-        block_map->get_block_status<BlockMap::map_type::DATA>(block_size - 1),
-        block_status::USED);
+    block_map->set_block<map_type::DATA>(block_size - 1, block_status::USED);
+    EXPECT_EQ(block_map->get_block_status<map_type::DATA>(block_size - 1),
+              block_status::USED);
 
-    block_map->set_block<BlockMap::map_type::DATA>(block_size + 1,
-                                                   block_status::USED);
-    EXPECT_EQ(
-        block_map->get_block_status<BlockMap::map_type::DATA>(block_size + 1),
-        block_status::USED);
+    block_map->set_block<map_type::DATA>(block_size + 1, block_status::USED);
+    EXPECT_EQ(block_map->get_block_status<map_type::DATA>(block_size + 1),
+              block_status::USED);
 
-    EXPECT_EQ(
-        block_map->get_block_status<BlockMap::map_type::DATA>(block_size + 2),
-        block_status::FREE);
+    EXPECT_EQ(block_map->get_block_status<map_type::DATA>(block_size + 2),
+              block_status::FREE);
 
-    block_map->set_block<BlockMap::map_type::DATA>(block_size + 1,
-                                                   block_status::FREE);
-    EXPECT_EQ(
-        block_map->get_block_status<BlockMap::map_type::DATA>(block_size + 1),
-        block_status::FREE);
+    block_map->set_block<map_type::DATA>(block_size + 1, block_status::FREE);
+    EXPECT_EQ(block_map->get_block_status<map_type::DATA>(block_size + 1),
+              block_status::FREE);
 }
 
 TEST_F(BlockMapTest, set_and_get_inode_block) {
     block_map->initialize(data_n_blocks, inode_n_blocks);
 
-    block_map->set_block<BlockMap::map_type::INODE>(inode_n_blocks - 1,
-                                                    block_status::USED);
-    EXPECT_EQ(block_map->get_block_status<BlockMap::map_type::INODE>(
-                  inode_n_blocks - 1),
+    block_map->set_block<map_type::INODE>(inode_n_blocks - 1,
+                                          block_status::USED);
+    EXPECT_EQ(block_map->get_block_status<map_type::INODE>(inode_n_blocks - 1),
               block_status::USED);
 }
 }

@@ -12,6 +12,7 @@ constexpr v_size meta_block_size = 64;
 constexpr v_size super_block_offset = 0;
 
 enum class block_status : data { USED, FREE };
+enum class map_type { INODE, DATA };
 
 struct super_block {
     data magic_number[row_size];
