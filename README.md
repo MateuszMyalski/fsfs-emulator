@@ -2,7 +2,7 @@
 
 ## DoD
 - **F**lash **S**imple **F**ile **S**ystem
-  - [] based on chunks of memory that can be selected ~~at the compile time~~
+  - [ ] based on chunks of memory that can be selected ~~at the compile time~~
     - [ ] chunk size 1024kb
     - [ ] chunk size 2048kb
     - [ ] chunk size 4096kb
@@ -43,15 +43,15 @@
     - [X] `mount`
     - [X] size getters
   - [ ] File system
-    - [ ]`read`
-    - [ ]`write`
-    - [ ]`stats`
-    - [X]`format`
-    - [X]`mount`
-    - [X]`unmount`
-    - [ ]`create`
-    - [ ]`remove`
-    - [ ]`erease`
+    - [ ] `read`
+    - [ ] `write`
+    - [ ] `stats`
+    - [X] `format`
+    - [X] `mount`
+    - [X] `unmount`
+    - [ ] `create`
+    - [ ] `remove`
+    - [ ] `erease`
 
 
 ## Sources - educational/inspiration
