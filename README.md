@@ -40,7 +40,7 @@
     - [X] `create`
     - [X] `open`
     - [X] `write`
-    - [X] `mount
+    - [X] `mount`
     - [X] size getters
   - [ ] File system
     - [ ]`read`
