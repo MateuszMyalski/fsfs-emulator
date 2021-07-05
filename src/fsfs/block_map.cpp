@@ -39,10 +39,7 @@ void BlockMap::resize() {
         data_block_map_size += 1;
     }
 
-    inode_block_map.reserve(inode_block_map_size);
     inode_block_map.resize(inode_block_map_size);
-
-    data_block_map.reserve(data_block_map_size);
     data_block_map.resize(data_block_map_size);
 }
 

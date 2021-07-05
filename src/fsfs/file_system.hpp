@@ -18,7 +18,7 @@ class FileSystem {
     v_size read(v_size inode, data& data, v_size length, v_size offset);
     v_size write(v_size inode, data& data, v_size length, v_size offset);
 
-    void format();
+    static void format(Disk& disk);
     void mount();
     void unmount();
 
@@ -30,6 +30,8 @@ class FileSystem {
     Disk& disk;
     BlockMap block_map;
     super_block MB;
+
+    static uint32_t calc_mb_checksum(super_block& MB);
 };
 }
 #endif
