@@ -2,7 +2,7 @@
 
 ## DoD
 - **F**lash **S**imple **F**ile **S**ystem
-  - [ ] based on chunks of memory that can be selected ~~at the compile time~~
+  - [] based on chunks of memory that can be selected ~~at the compile time~~
     - [ ] chunk size 1024kb
     - [ ] chunk size 2048kb
     - [ ] chunk size 4096kb
@@ -10,9 +10,9 @@
     - [ ] `read` - reads selected lenght of data from given inode with respect to given offset
     - [ ] `write` - writes to inode with selected lenght of data with respect to offset, also allocate another inodes if necessary
     - [ ] `stats` - print all reports of the file system 
-    - [ ] `format` - formats the disk and initialzie propper file system structure
-    - [ ] `mount` - checks the integrity of the file system
-    - [ ] `unmount` - free up the disk
+    - [X] `format` - formats the disk and initialzie propper file system structure
+    - [X] `mount` - checks the integrity of the file system
+    - [X] `unmount` - free up the disk
     - [ ] `create` - create new inode
     - [ ] `remove` - mark the inode as not allocated to be overwritten in the future or unlink data block
     - [ ] `erease` - not only mark the inode as free but also overwrite the data
@@ -37,10 +37,22 @@
   - [ ] displays stats of the disk and file system
 - Tests
   - [X] Disk space emulator
-    - [X] creating virtual disk
-    - [X] opening and mounting virtual disk
-    - [X] writting and reading to the virtual disk
-    - [X] returns correct size value
+    - [X] `create`
+    - [X] `open`
+    - [X] `write`
+    - [X] `mount
+    - [X] size getters
+  - [ ] File system
+    - [ ]`read`
+    - [ ]`write`
+    - [ ]`stats`
+    - [X]`format`
+    - [X]`mount`
+    - [X]`unmount`
+    - [ ]`create`
+    - [ ]`remove`
+    - [ ]`erease`
+
 
 ## Sources - educational/inspiration
 1. https://www3.nd.edu/~pbui/teaching/cse.30341.fa17/project06.html
