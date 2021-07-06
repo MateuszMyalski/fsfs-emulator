@@ -6,7 +6,7 @@
 
 namespace FSFS {
 
-Disk::Disk(v_size block_size) : mounted(0), block_size(block_size) {
+Disk::Disk(fsize block_size) : mounted(0), block_size(block_size) {
     if ((block_size % quant_block_size) != 0) {
         throw std::invalid_argument(
             "Block size must be multiplication of 1024.");
@@ -30,21 +30,21 @@ void Disk::open(const char* path) {
     }
 }
 
-void Disk::create(const char* path, v_size n_blocks, v_size block_size) {
+void Disk::create(const char* path, fsize n_blocks, fsize block_size) {
     std::fstream disk(path, std::ios::out | std::ios::binary);
-    v_size disk_size = block_size * n_blocks;
+    fsize disk_size = block_size * n_blocks;
 
     disk.seekp(disk_size - 1);
     disk.write("", 1);
 }
 
-v_size Disk::write(v_size block_n, const data* data_block, v_size data_len) {
+fsize Disk::write(address block_n, const data* data_block, fsize data_len) {
     if (!(disk_img.is_open() && is_mounted())) {
         return -1;
     }
 
-    v_size offset = block_n * block_size;
-    v_size data_overflow = std::min(0, disk_img_size - (offset + data_len));
+    address offset = block_n * block_size;
+    fsize data_overflow = std::min(0, disk_img_size - (offset + data_len));
     data_len -= std::abs(data_overflow);
 
     disk_img.seekp(offset, disk_img.beg);
@@ -53,13 +53,13 @@ v_size Disk::write(v_size block_n, const data* data_block, v_size data_len) {
     return data_len;
 }
 
-v_size Disk::read(v_size block_n, data* data_block, v_size data_len) {
+fsize Disk::read(address block_n, data* data_block, fsize data_len) {
     if (!(disk_img.is_open() && is_mounted())) {
         return -1;
     }
 
-    v_size offset = block_n * block_size;
-    v_size data_overflow = std::min(0, disk_img_size - (offset + data_len));
+    address offset = block_n * block_size;
+    fsize data_overflow = std::min(0, disk_img_size - (offset + data_len));
     data_len -= std::abs(data_overflow);
 
     disk_img.seekg(offset, disk_img.beg);

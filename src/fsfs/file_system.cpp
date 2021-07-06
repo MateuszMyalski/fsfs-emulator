@@ -52,9 +52,9 @@ void FileSystem::unmount() {
 void FileSystem::format(Disk& disk) {
     disk.mount();
 
-    v_size real_disk_size = disk.get_disk_size() - 1;
-    v_size meta_blocks = disk.get_block_size() / meta_block_size;
-    v_size n_inode_blocks = real_disk_size * 0.1;
+    fsize real_disk_size = disk.get_disk_size() - 1;
+    fsize meta_blocks = disk.get_block_size() / meta_block_size;
+    fsize n_inode_blocks = real_disk_size * 0.1;
     std::vector<meta_block> block = {};
     block.resize(meta_blocks);
 

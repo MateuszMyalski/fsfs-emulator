@@ -14,8 +14,8 @@ class DiskTest : public ::testing::Test {
 
    protected:
     constexpr static bool clean_test_files = true;
-    constexpr static v_size block_size = 1024;
-    constexpr static v_size n_blocks = 5;
+    constexpr static fsize block_size = 1024;
+    constexpr static fsize n_blocks = 5;
     constexpr static char disk_name[] = "tmp_disk.img";
 
     Disk* test_disk;
@@ -59,7 +59,7 @@ class DiskTest : public ::testing::Test {
         }
     }
 
-    v_size get_file_size(std::string_view file_name) {
+    fsize get_file_size(std::string_view file_name) {
         std::ifstream file(file_name.data(), std::ios::binary);
         file.seekg(0, std::ios::end);
 
@@ -118,7 +118,7 @@ TEST_F(DiskTest, open_invalid_size) {
 }
 
 TEST_F(DiskTest, write) {
-    constexpr v_size w_data_size = block_size * 2;
+    constexpr fsize w_data_size = block_size * 2;
     data w_data[w_data_size] = {};
     std::fill_n(w_data, w_data_size, 0x0D);
 
@@ -138,7 +138,7 @@ TEST_F(DiskTest, write) {
 }
 
 TEST_F(DiskTest, write_and_read) {
-    constexpr v_size r_data_size = block_size * n_blocks;
+    constexpr fsize r_data_size = block_size * n_blocks;
 
     data r_data[r_data_size] = {};
     data ref_data[r_data_size] = {};

@@ -5,24 +5,24 @@
 
 #include "common/types.hpp"
 namespace FSFS {
-constexpr v_size quant_block_size = 1024;
+constexpr fsize quant_block_size = 1024;
 
 class Disk {
    private:
     int32_t mounted;
-    v_size block_size;
-    v_size disk_img_size;
+    fsize block_size;
+    fsize disk_img_size;
     std::fstream disk_img;
 
    public:
-    Disk(v_size block_size);
+    Disk(fsize block_size);
     ~Disk();
     void open(const char* path);
-    v_size write(v_size block_n, const data* data_block, v_size data_len);
-    v_size read(v_size block_n, data* data_block, v_size data_len);
-    v_size get_block_size() const { return block_size; };
-    v_size get_disk_size() const { return (disk_img_size / block_size); };
-    static void create(const char* path, v_size n_blocks, v_size block_size);
+    fsize write(address block_n, const data* data_block, fsize data_len);
+    fsize read(address block_n, data* data_block, fsize data_len);
+    fsize get_block_size() const { return block_size; };
+    fsize get_disk_size() const { return (disk_img_size / block_size); };
+    static void create(const char* path, fsize n_blocks, fsize block_size);
 
     bool is_mounted() const { return mounted; };
     void mount() { mounted++; };

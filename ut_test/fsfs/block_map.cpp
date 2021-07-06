@@ -7,9 +7,9 @@ using namespace FSFS;
 namespace {
 class BlockMapTest : public ::testing::Test {
    protected:
-    constexpr static v_size block_size = 1024;
-    constexpr static v_size data_n_blocks = 2048;
-    constexpr static v_size inode_n_blocks = 512;
+    constexpr static fsize block_size = 1024;
+    constexpr static fsize data_n_blocks = 2048;
+    constexpr static fsize inode_n_blocks = 512;
     Disk* dummy_disk;
     BlockMap* block_map;
 

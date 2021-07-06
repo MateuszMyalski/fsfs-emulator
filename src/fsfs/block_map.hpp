@@ -11,13 +11,13 @@
 namespace FSFS {
 class BlockMap {
    private:
-    v_size n_inode_blocks;
-    v_size n_data_blocks;
+    fsize n_inode_blocks;
+    fsize n_data_blocks;
 
     std::vector<uint64_t> inode_block_map;
     std::vector<uint64_t> data_block_map;
 
-    uint64_t* get_map_line(v_size block_n, map_type map_type);
+    uint64_t* get_map_line(address block_n, map_type map_type);
     void resize();
 
    public:
@@ -26,16 +26,16 @@ class BlockMap {
 
     BlockMap() : n_inode_blocks(-1), n_data_blocks(-1){};
 
-    void initialize(v_size n_data_blocks, v_size n_inode_blocks);
+    void initialize(fsize n_data_blocks, fsize n_inode_blocks);
 
     template <map_type T>
     void scan_block(Disk& disk);
 
     template <map_type T>
-    void set_block(v_size block_n, block_status status);
+    void set_block(address block_n, block_status status);
 
     template <map_type T>
-    block_status get_block_status(v_size block_n);
+    block_status get_block_status(address block_n);
 };
 
 }

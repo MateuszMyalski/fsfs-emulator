@@ -6,7 +6,7 @@ using namespace FSFS;
 namespace {
 class FileSystemTest : public ::testing::Test {
    protected:
-    constexpr static v_size block_size = 1024;
+    constexpr static fsize block_size = 1024;
     FileSystem* fs;
     Disk* disk;
 
@@ -25,9 +25,9 @@ class FileSystemTest : public ::testing::Test {
 };
 TEST_F(FileSystemTest, format) {
     FileSystem::format(*disk);
-    v_size real_disk_size = disk->get_disk_size() - 1;
-    v_size n_inode_blocks = real_disk_size * 0.1;
-    v_size n_data_blocks = real_disk_size - n_inode_blocks;
+    fsize real_disk_size = disk->get_disk_size() - 1;
+    fsize n_inode_blocks = real_disk_size * 0.1;
+    fsize n_data_blocks = real_disk_size - n_inode_blocks;
     ASSERT_EQ(n_inode_blocks + n_data_blocks + 1, disk->get_disk_size());
 
     disk->mount();

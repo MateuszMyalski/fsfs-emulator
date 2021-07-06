@@ -15,16 +15,16 @@ class FileSystem {
     };
     void stats();
 
-    v_size read(v_size inode, data& data, v_size length, v_size offset);
-    v_size write(v_size inode, data& data, v_size length, v_size offset);
+    fsize read(address inode, data& data, fsize length, address offset);
+    fsize write(address inode, data& data, fsize length, address offset);
 
     static void format(Disk& disk);
     void mount();
     void unmount();
 
-    v_size create();
-    v_size remove();
-    v_size erease();
+    fsize create();
+    fsize remove();
+    fsize erease();
 
    private:
     Disk& disk;

@@ -6,16 +6,16 @@
 
 namespace FSFS {
 namespace {
-inline int32_t calc_row(v_size block_n) {
+inline int32_t calc_row(fsize block_n) {
     return block_n / BlockMap::block_map_line_len;
 }
-inline int32_t calc_pos(v_size block_n) {
+inline int32_t calc_pos(fsize block_n) {
     auto row = block_n / BlockMap::block_map_line_len;
     return block_n - (BlockMap::block_map_line_len * row);
 }
 }
 
-void BlockMap::initialize(v_size n_data_blocks, v_size n_inode_blocks) {
+void BlockMap::initialize(fsize n_data_blocks, fsize n_inode_blocks) {
     if (n_data_blocks <= 0 || n_inode_blocks <= 0) {
         throw std::invalid_argument("Size cannot be equal or lower than 0.");
     }
@@ -43,7 +43,7 @@ void BlockMap::resize() {
     data_block_map.resize(data_block_map_size);
 }
 
-uint64_t* BlockMap::get_map_line(v_size block_n, map_type map_type) {
+uint64_t* BlockMap::get_map_line(address block_n, map_type map_type) {
     if (map_type == map_type::DATA) {
         if (block_n >= n_data_blocks || block_n < 0) {
             throw std::invalid_argument("Block idx out of bound.");
@@ -58,7 +58,7 @@ uint64_t* BlockMap::get_map_line(v_size block_n, map_type map_type) {
 }
 
 template <map_type T>
-void BlockMap::set_block(v_size block_n, block_status status) {
+void BlockMap::set_block(address block_n, block_status status) {
     constexpr uint64_t mask = (1UL << (block_map_line_len - 1));
     uint64_t* block_map = get_map_line(block_n, T);
 
@@ -72,7 +72,7 @@ void BlockMap::set_block(v_size block_n, block_status status) {
 }
 
 template <map_type T>
-block_status BlockMap::get_block_status(v_size block_n) {
+block_status BlockMap::get_block_status(address block_n) {
     constexpr uint64_t mask = (1UL << (block_map_line_len - 1));
     uint64_t* block_map = get_map_line(block_n, T);
 
@@ -83,15 +83,15 @@ block_status BlockMap::get_block_status(v_size block_n) {
     return status ? block_status::USED : block_status::FREE;
 }
 
-template void BlockMap::set_block<map_type::DATA>(v_size block_n,
+template void BlockMap::set_block<map_type::DATA>(address block_n,
                                                   block_status status);
-template void BlockMap::set_block<map_type::INODE>(v_size block_n,
+template void BlockMap::set_block<map_type::INODE>(address block_n,
                                                    block_status status);
 
 template block_status BlockMap::get_block_status<map_type::DATA>(
-    v_size block_n);
+    address block_n);
 template block_status BlockMap::get_block_status<map_type::INODE>(
-    v_size block_n);
+    address block_n);
 
 // template void BlockMap::scan_block<map_type::DATA>();
 // template void BlockMap::scan_block<map_type::INODE>();
