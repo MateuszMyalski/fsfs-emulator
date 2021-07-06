@@ -14,7 +14,7 @@ constexpr fsize file_name_len = 32;
 constexpr fsize inode_n_block_ptr_len = 5;
 
 constexpr address super_block_offset = 0;
-constexpr address inode_blocks_offeset = 1;
+constexpr address inode_blocks_offset = 1;
 
 const data magic_number_lut[] = {0xDE, 0xAD, 0xC0, 0xDE};
 const data dummy_file_name[] = "././DuMmY  !@#$%^&*() fIlE nAmE";

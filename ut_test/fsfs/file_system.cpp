@@ -47,7 +47,7 @@ TEST_F(FileSystemTest, format) {
 
     for (auto i = 0; i < n_inode_blocks; i++) {
         status =
-            disk->read(inode_blocks_offeset + i, r_data->raw_data, block_size);
+            disk->read(inode_blocks_offset + i, r_data->raw_data, block_size);
         ASSERT_EQ(status, block_size);
 
         for (auto j = 0; j < block_size / meta_block_size; j++) {

@@ -74,7 +74,7 @@ void FileSystem::format(Disk& disk) {
         std::memcpy(block[i].inode.file_name, dummy_file_name, file_name_len);
     }
     for (auto i = 0; i < n_inode_blocks; i++) {
-        disk.write(inode_blocks_offeset + i,
+        disk.write(inode_blocks_offset + i,
                    reinterpret_cast<data*>(block.data()),
                    disk.get_block_size());
     }
