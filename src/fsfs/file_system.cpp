@@ -87,7 +87,8 @@ uint32_t FSFS::FileSystem::calc_mb_checksum(super_block& MB) {
     uint8_t* raw_data = reinterpret_cast<data*>(&MB);
     uint8_t checksum[row_size] = {};
 
-    for (auto i = 0; i < meta_block_size - sizeof(MB.checksum); i++) {
+    fsize mb_size = meta_block_size - sizeof(MB.checksum);
+    for (auto i = 0; i < mb_size; i++) {
         int32_t idx = i & 0x03;
         checksum[idx] ^= raw_data[i] ^ xor_word[idx];
     }

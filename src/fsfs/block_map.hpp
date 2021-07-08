@@ -18,7 +18,7 @@ class BlockMap {
     std::vector<uint64_t> data_block_map;
 
     uint64_t* get_map_line(address block_n, map_type map_type);
-    void resize();
+    void indirect_data_scan(Disk& disk, address block_n, fsize block_size);
 
    public:
     constexpr static int32_t block_map_line_len =
@@ -28,8 +28,7 @@ class BlockMap {
 
     void initialize(fsize n_data_blocks, fsize n_inode_blocks);
 
-    template <map_type T>
-    void scan_block(Disk& disk);
+    void scan_blocks(Disk& disk, const super_block& MB);
 
     template <map_type T>
     void set_block(address block_n, block_status status);

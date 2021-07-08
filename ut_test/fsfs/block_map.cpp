@@ -1,7 +1,9 @@
 #include "fsfs/block_map.hpp"
 
 #include <exception>
+#include <vector>
 
+#include "fsfs/file_system.hpp"
 #include "gtest/gtest.h"
 using namespace FSFS;
 namespace {
@@ -20,6 +22,8 @@ class BlockMapTest : public ::testing::Test {
         dummy_disk->mount();
     }
     void TearDown() override {
+        dummy_disk->unmount();
+        EXPECT_FALSE(dummy_disk->is_mounted());
         delete block_map;
         delete dummy_disk;
     }
@@ -139,5 +143,65 @@ TEST_F(BlockMapTest, set_and_get_inode_block) {
                                           block_status::USED);
     EXPECT_EQ(block_map->get_block_status<map_type::INODE>(inode_n_blocks - 1),
               block_status::USED);
+}
+
+TEST_F(BlockMapTest, scan_data_blocks) {
+    constexpr int32_t subblocks_in_block = block_size / meta_block_size;
+    const char file_name[] = "TEST INODE";
+
+    Disk::create("disk.img", 1024, block_size);
+    dummy_disk->open("disk.img");
+    FileSystem::format(*dummy_disk);
+
+    std::vector<data> mb_data = {};
+    mb_data.resize(block_size);
+    dummy_disk->read(super_block_offset, mb_data.data(), block_size);
+
+    std::vector<data> data = {};
+    data.resize(block_size);
+
+    inode_block* inodes = reinterpret_cast<inode_block*>(data.data());
+
+    address last_data_block = 0;
+    std::vector<address> used_data_blocks;
+    std::vector<address> used_inode_blocks;
+
+    for (auto inode = 0; inode < subblocks_in_block; inode++) {
+        if ((subblocks_in_block % 3) == 0) {
+            continue;
+        }
+        used_inode_blocks.push_back(inode);
+        inodes[inode].type = block_status::USED;
+        std::memcpy(inodes[inode].file_name, file_name, sizeof(file_name));
+
+        // for every inode pattern - 010110011
+        inodes[inode].block_ptr[0] = last_data_block + 1;
+        inodes[inode].block_ptr[1] = last_data_block + 3;
+        inodes[inode].block_ptr[2] = last_data_block + 4;
+        inodes[inode].block_ptr[3] = last_data_block + 7;
+        inodes[inode].block_ptr[4] = last_data_block + 8;
+        last_data_block += 10;
+
+        for (auto j = 0; j < inode_n_block_ptr_len; j++) {
+            used_data_blocks.push_back(inodes[inode].block_ptr[j]);
+        }
+
+        inodes[inode].indirect_inode_ptr = inode_empty_ptr;
+    }
+
+    dummy_disk->write(inode_blocks_offset, data.data(), block_size);
+
+    block_map->scan_blocks(*dummy_disk,
+                           *reinterpret_cast<super_block*>(mb_data.data()));
+
+    for (auto& inode_n : used_inode_blocks) {
+        ASSERT_EQ(block_map->get_block_status<map_type::INODE>(inode_n),
+                  block_status::USED);
+    }
+
+    for (auto& inode_n : used_data_blocks) {
+        ASSERT_EQ(block_map->get_block_status<map_type::DATA>(inode_n),
+                  block_status::USED);
+    }
 }
 }
