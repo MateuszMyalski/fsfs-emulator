@@ -43,11 +43,13 @@ void BlockMap::initialize(fsize n_data_blocks, fsize n_inode_blocks) {
 uint64_t* BlockMap::get_map_line(address block_n, map_type map_type) {
     if (map_type == map_type::DATA) {
         if (block_n >= n_data_blocks || block_n < 0) {
+            std::cout << "Invalid block: " << block_n << "\n";
             throw std::invalid_argument("Block idx out of bound.");
         }
         return &data_block_map.at(calc_row(block_n));
     } else {
         if (block_n >= n_inode_blocks || block_n < 0) {
+            std::cout << "Invalid block: " << block_n << "\n";
             throw std::invalid_argument("Block idx out of bound.");
         }
         return &inode_block_map.at(calc_row(block_n));

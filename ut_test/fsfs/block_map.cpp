@@ -12,21 +12,82 @@ class BlockMapTest : public ::testing::Test {
     constexpr static fsize block_size = 1024;
     constexpr static fsize data_n_blocks = 2048;
     constexpr static fsize inode_n_blocks = 512;
+    constexpr static fsize metablocks_in_block = block_size / meta_block_size;
+
     Disk* dummy_disk;
     BlockMap* block_map;
+    super_block MB;
+
+    std::vector<address> used_data_blocks;
+    std::vector<address> used_inode_blocks;
 
    public:
     void SetUp() override {
         dummy_disk = new Disk(block_size);
         block_map = new BlockMap();
+
+        Disk::create("tmp_disk.img", 500, block_size);
+        dummy_disk->open("tmp_disk.img");
+        FileSystem::format(*dummy_disk);
+
         dummy_disk->mount();
+        dummy_disk->read(super_block_offset, reinterpret_cast<data*>(&MB),
+                         meta_block_size);
     }
+
     void TearDown() override {
         dummy_disk->unmount();
         EXPECT_FALSE(dummy_disk->is_mounted());
+
         delete block_map;
         delete dummy_disk;
+
+        std::remove("tmp_disk.img");
     }
+
+    address set_dummy_inode(address inode_n, address data_offset,
+                            address indirect_inode) {
+        std::vector<data> data(block_size, 0x0);
+        inode_block* inodes = reinterpret_cast<inode_block*>(data.data());
+
+        address last_data_block = data_offset;
+        for (auto idx = 0; idx < metablocks_in_block; idx++) {
+            if (idx == 3) {
+                inodes[idx].type = block_status::FREE;
+                continue;
+            }
+
+            inodes[idx].type = block_status::USED;
+            const char file_name[] = "TEST INODE";
+            std::memcpy(inodes[idx].file_name, file_name, sizeof(file_name));
+
+            inodes[idx].block_ptr[0] = last_data_block;
+            inodes[idx].block_ptr[1] = last_data_block + 3;
+            inodes[idx].block_ptr[2] =
+                idx == 5 ? last_data_block + 4 : inode_empty_ptr;
+            inodes[idx].block_ptr[3] =
+                idx == 5 ? last_data_block + 7 : inode_empty_ptr;
+            inodes[idx].block_ptr[4] =
+                idx == 5 ? last_data_block + 8 : inode_empty_ptr;
+            last_data_block += 10;
+
+            inodes[idx].indirect_inode_ptr = indirect_inode;
+
+            used_inode_blocks.push_back(inode_n + idx);
+            for (auto i = 0; i < inode_n_block_ptr_len; i++) {
+                if (inodes[idx].block_ptr[i] == inode_empty_ptr) {
+                    continue;
+                }
+                used_data_blocks.push_back(inodes[idx].block_ptr[i]);
+            }
+        }
+
+        dummy_disk->write(inode_blocks_offset + inode_n, data.data(),
+                          block_size);
+
+        return last_data_block;
+    }
+    // void set_dummy_indirect_inode(address data_n, address data_offset) {}
 };
 TEST_F(BlockMapTest, initialize_throw) {
     EXPECT_THROW(block_map->initialize(0, inode_n_blocks),
@@ -146,61 +207,18 @@ TEST_F(BlockMapTest, set_and_get_inode_block) {
 }
 
 TEST_F(BlockMapTest, scan_data_blocks) {
-    constexpr int32_t subblocks_in_block = block_size / meta_block_size;
-    const char file_name[] = "TEST INODE";
+    auto last_data_n = set_dummy_inode(0, 0, inode_empty_ptr);
+    set_dummy_inode(1, last_data_n, inode_empty_ptr);
 
-    Disk::create("disk.img", 1024, block_size);
-    dummy_disk->open("disk.img");
-    FileSystem::format(*dummy_disk);
+    block_map->scan_blocks(*dummy_disk, MB);
 
-    std::vector<data> mb_data = {};
-    mb_data.resize(block_size);
-    dummy_disk->read(super_block_offset, mb_data.data(), block_size);
-
-    std::vector<data> data = {};
-    data.resize(block_size);
-
-    inode_block* inodes = reinterpret_cast<inode_block*>(data.data());
-
-    address last_data_block = 0;
-    std::vector<address> used_data_blocks;
-    std::vector<address> used_inode_blocks;
-
-    for (auto inode = 0; inode < subblocks_in_block; inode++) {
-        if ((subblocks_in_block % 3) == 0) {
-            continue;
-        }
-        used_inode_blocks.push_back(inode);
-        inodes[inode].type = block_status::USED;
-        std::memcpy(inodes[inode].file_name, file_name, sizeof(file_name));
-
-        // for every inode pattern - 010110011
-        inodes[inode].block_ptr[0] = last_data_block + 1;
-        inodes[inode].block_ptr[1] = last_data_block + 3;
-        inodes[inode].block_ptr[2] = last_data_block + 4;
-        inodes[inode].block_ptr[3] = last_data_block + 7;
-        inodes[inode].block_ptr[4] = last_data_block + 8;
-        last_data_block += 10;
-
-        for (auto j = 0; j < inode_n_block_ptr_len; j++) {
-            used_data_blocks.push_back(inodes[inode].block_ptr[j]);
-        }
-
-        inodes[inode].indirect_inode_ptr = inode_empty_ptr;
-    }
-
-    dummy_disk->write(inode_blocks_offset, data.data(), block_size);
-
-    block_map->scan_blocks(*dummy_disk,
-                           *reinterpret_cast<super_block*>(mb_data.data()));
-
-    for (auto& inode_n : used_inode_blocks) {
-        ASSERT_EQ(block_map->get_block_status<map_type::INODE>(inode_n),
+    for (auto& addr : used_inode_blocks) {
+        ASSERT_EQ(block_map->get_block_status<map_type::INODE>(addr),
                   block_status::USED);
     }
 
-    for (auto& inode_n : used_data_blocks) {
-        ASSERT_EQ(block_map->get_block_status<map_type::DATA>(inode_n),
+    for (auto& addr : used_data_blocks) {
+        ASSERT_EQ(block_map->get_block_status<map_type::DATA>(addr),
                   block_status::USED);
     }
 }
