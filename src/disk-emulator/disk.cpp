@@ -16,7 +16,7 @@ Disk::Disk(fsize block_size) : mounted(0), block_size(block_size) {
 Disk::~Disk() { disk_img.close(); }
 
 void Disk::open(const char* path) {
-    if (disk_img.is_open() || is_mounted()) {
+    if (disk_img.is_open() && is_mounted()) {
         throw std::runtime_error("Image already opened.");
     }
 
