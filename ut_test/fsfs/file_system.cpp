@@ -130,6 +130,7 @@ TEST_F(FileSystemTest, set_and_get_inode) {
 
     fs->set_inode(0, ref_inode_one);
     fs->set_inode(3, ref_inode_two);
+    fs->set_inode(block_size / meta_block_size + 4, ref_inode_one);
 
     fs->get_inode(0, inode);
 
@@ -157,6 +158,20 @@ TEST_F(FileSystemTest, set_and_get_inode) {
 
     for (auto i = 0; i < file_name_len; i++) {
         ASSERT_EQ(ref_inode_two.file_name[i], inode.file_name[i]);
+    }
+
+    fs->get_inode(block_size / meta_block_size + 4, inode);
+
+    ASSERT_EQ(ref_inode_one.type, inode.type);
+    ASSERT_EQ(ref_inode_one.file_len, inode.file_len);
+    ASSERT_EQ(ref_inode_one.block_ptr[0], inode.block_ptr[0]);
+    ASSERT_EQ(ref_inode_one.block_ptr[1], inode.block_ptr[1]);
+    ASSERT_EQ(ref_inode_one.block_ptr[2], inode.block_ptr[2]);
+    ASSERT_EQ(ref_inode_one.block_ptr[3], inode.block_ptr[3]);
+    ASSERT_EQ(ref_inode_one.block_ptr[4], inode.block_ptr[4]);
+
+    for (auto i = 0; i < file_name_len; i++) {
+        ASSERT_EQ(ref_inode_one.file_name[i], inode.file_name[i]);
     }
 
     fs->unmount();
@@ -196,6 +211,7 @@ TEST_F(FileSystemTest, set_and_get_block) {
     std::memcpy(ref_data.data(), (void*)memcpy, block_size);
     FileSystem::format(*disk);
     fs->mount();
+
     fs->set_data_block(345, ref_data.data()[0]);
     fs->get_data_block(345, r_data.data()[0]);
 
