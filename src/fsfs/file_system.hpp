@@ -29,8 +29,8 @@ class FileSystem {
     void set_inode(address inode_n, const inode_block& inode_block);
     void get_inode(address inode_n, inode_block& inode_block);
 
-    void set_indirect_inode(address data_n, const data& data_block);
-    void get_indirect_inode(address data_n, data& data_block);
+    void set_data_block(address data_n, const data& data_block);
+    void get_data_block(address data_n, data& data_block);
 
    private:
     Disk& disk;

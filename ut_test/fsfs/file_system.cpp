@@ -161,4 +161,48 @@ TEST_F(FileSystemTest, set_and_get_inode) {
 
     fs->unmount();
 }
+
+TEST_F(FileSystemTest, set_data_block_throw) {
+    data dummy_data[1] = {};
+    FileSystem::format(*disk);
+
+    ASSERT_THROW(fs->set_data_block(0, dummy_data[0]), std::invalid_argument);
+    fs->mount();
+
+    ASSERT_THROW(fs->set_data_block(-1, dummy_data[0]), std::invalid_argument);
+    ASSERT_THROW(fs->set_data_block(0xFFFFF, dummy_data[0]),
+                 std::invalid_argument);
+
+    fs->unmount();
+}
+
+TEST_F(FileSystemTest, get_data_block_throw) {
+    data dummy_data[1] = {};
+    FileSystem::format(*disk);
+
+    ASSERT_THROW(fs->get_data_block(0, dummy_data[0]), std::invalid_argument);
+    fs->mount();
+
+    ASSERT_THROW(fs->get_data_block(-1, dummy_data[0]), std::invalid_argument);
+    ASSERT_THROW(fs->get_data_block(0xFFFFF, dummy_data[0]),
+                 std::invalid_argument);
+
+    fs->unmount();
+}
+
+TEST_F(FileSystemTest, set_and_get_block) {
+    std::vector<data> ref_data(block_size);
+    std::vector<data> r_data(block_size);
+    std::memcpy(ref_data.data(), (void*)memcpy, block_size);
+    FileSystem::format(*disk);
+    fs->mount();
+    fs->set_data_block(345, ref_data.data()[0]);
+    fs->get_data_block(345, r_data.data()[0]);
+
+    for (auto i = 0; i < block_size; i++) {
+        EXPECT_EQ(ref_data[i], r_data[i]);
+    }
+
+    fs->unmount();
+}
 }

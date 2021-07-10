@@ -105,21 +105,25 @@ void FileSystem::set_inode(address inode_n, const inode_block& data_block) {
         throw std::invalid_argument("Inode number out of range.");
     }
 
-    fsize n_meta_in_block = disk.get_block_size() / meta_block_size;
+    fsize n_meta_in_block = MB.block_size / meta_block_size;
     address inode_block_n = inode_n / n_meta_in_block;
     address nth_inode = inode_n - inode_block_n * n_meta_in_block;
 
-    std::vector<data> inode_data(disk.get_block_size());
+    std::vector<data> inode_data(MB.block_size);
     inode_block* const inodes =
         reinterpret_cast<inode_block*>(inode_data.data());
 
     disk.read(inode_blocks_offset + inode_block_n, inode_data.data(),
-              disk.get_block_size());
+              MB.block_size);
 
     std::memcpy(&inodes[nth_inode], &data_block, meta_block_size);
 
-    disk.write(inode_blocks_offset + inode_block_n, inode_data.data(),
-               disk.get_block_size());
+    auto n_written = disk.write(inode_blocks_offset + inode_block_n,
+                                inode_data.data(), MB.block_size);
+
+    if (n_written != MB.block_size) {
+        throw std::runtime_error("Error while write operation.");
+    }
 
     block_map.set_block<map_type::INODE>(inode_n, data_block.type);
 }
@@ -147,7 +151,7 @@ void FileSystem::get_inode(address inode_n, inode_block& data_block) {
     std::memcpy(&data_block, &inodes[nth_inode], meta_block_size);
 }
 
-void FileSystem::set_indirect_inode(address data_n, const data& data_block) {
+void FileSystem::set_data_block(address data_n, const data& data_block) {
     if (data_n < 0) {
         throw std::invalid_argument("Data block number must not be negative.");
     }
@@ -155,6 +159,28 @@ void FileSystem::set_indirect_inode(address data_n, const data& data_block) {
     if (data_n >= MB.n_data_blocks) {
         throw std::invalid_argument("Data block number out of range.");
     }
+
+    address data_offset = inode_blocks_offset + MB.n_inode_blocks;
+
+    auto n_written =
+        disk.write(data_offset + data_n, &data_block, MB.block_size);
+
+    if (n_written != MB.block_size) {
+        throw std::runtime_error("Error while write operation.");
+    }
 }
 
+void FileSystem::get_data_block(address data_n, data& data_block) {
+    if (data_n < 0) {
+        throw std::invalid_argument("Data block number must not be negative.");
+    }
+
+    if (data_n >= MB.n_data_blocks) {
+        throw std::invalid_argument("Data block number out of range.");
+    }
+
+    address data_offset = inode_blocks_offset + MB.n_inode_blocks;
+
+    disk.read(data_offset + data_n, &data_block, MB.block_size);
+}
 }
