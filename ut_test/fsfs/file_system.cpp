@@ -20,6 +20,8 @@ class FileSystemTest : public ::testing::Test {
     void TearDown() override {
         std::remove("tmp_disk.img");
         delete fs;
+
+        ASSERT_FALSE(disk->is_mounted());
         delete disk;
     }
 };
@@ -79,6 +81,8 @@ TEST_F(FileSystemTest, set_inode_throw) {
 
     ASSERT_THROW(fs->set_inode(-1, dummy_inode), std::invalid_argument);
     ASSERT_THROW(fs->set_inode(0xFFFFF, dummy_inode), std::invalid_argument);
+
+    fs->unmount();
 }
 
 TEST_F(FileSystemTest, get_inode_throw) {
@@ -90,6 +94,8 @@ TEST_F(FileSystemTest, get_inode_throw) {
 
     ASSERT_THROW(fs->get_inode(-1, dummy_inode), std::invalid_argument);
     ASSERT_THROW(fs->get_inode(0xFFFFF, dummy_inode), std::invalid_argument);
+
+    fs->unmount();
 }
 
 TEST_F(FileSystemTest, set_and_get_inode) {
@@ -152,5 +158,7 @@ TEST_F(FileSystemTest, set_and_get_inode) {
     for (auto i = 0; i < file_name_len; i++) {
         ASSERT_EQ(ref_inode_two.file_name[i], inode.file_name[i]);
     }
+
+    fs->unmount();
 }
 }
