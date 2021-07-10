@@ -69,4 +69,88 @@ TEST_F(FileSystemTest, format) {
     fs->mount();
     fs->unmount();
 }
+
+TEST_F(FileSystemTest, set_inode_throw) {
+    inode_block dummy_inode = {};
+    FileSystem::format(*disk);
+
+    ASSERT_THROW(fs->set_inode(0, dummy_inode), std::invalid_argument);
+    fs->mount();
+
+    ASSERT_THROW(fs->set_inode(-1, dummy_inode), std::invalid_argument);
+    ASSERT_THROW(fs->set_inode(0xFFFFF, dummy_inode), std::invalid_argument);
+}
+
+TEST_F(FileSystemTest, get_inode_throw) {
+    inode_block dummy_inode = {};
+    FileSystem::format(*disk);
+
+    ASSERT_THROW(fs->get_inode(0, dummy_inode), std::invalid_argument);
+    fs->mount();
+
+    ASSERT_THROW(fs->get_inode(-1, dummy_inode), std::invalid_argument);
+    ASSERT_THROW(fs->get_inode(0xFFFFF, dummy_inode), std::invalid_argument);
+}
+
+TEST_F(FileSystemTest, set_and_get_inode) {
+    FileSystem::format(*disk);
+    fs->mount();
+
+    const char name[] = "Test inode";
+
+    inode_block ref_inode_one = {};
+    inode_block ref_inode_two = {};
+    inode_block inode = {};
+
+    ref_inode_one.type = block_status::USED;
+    ref_inode_one.file_len = 1024 * 5;
+    ref_inode_one.indirect_inode_ptr = inode_empty_ptr;
+    ref_inode_one.block_ptr[0] = 1;
+    ref_inode_one.block_ptr[1] = 3;
+    ref_inode_one.block_ptr[2] = 4;
+    ref_inode_one.block_ptr[3] = 5;
+    ref_inode_one.block_ptr[4] = 8;
+    std::memcpy(ref_inode_one.file_name, name, sizeof(name));
+
+    ref_inode_two.type = block_status::USED;
+    ref_inode_two.file_len = 1024 * 2;
+    ref_inode_two.indirect_inode_ptr = inode_empty_ptr;
+    ref_inode_two.block_ptr[0] = 20;
+    ref_inode_two.block_ptr[1] = 31;
+    ref_inode_two.block_ptr[2] = 451;
+    ref_inode_two.block_ptr[3] = 51;
+    ref_inode_two.block_ptr[4] = 82;
+    std::memcpy(ref_inode_one.file_name, name, sizeof(name));
+
+    fs->set_inode(0, ref_inode_one);
+    fs->set_inode(3, ref_inode_two);
+
+    fs->get_inode(0, inode);
+
+    ASSERT_EQ(ref_inode_one.type, inode.type);
+    ASSERT_EQ(ref_inode_one.file_len, inode.file_len);
+    ASSERT_EQ(ref_inode_one.block_ptr[0], inode.block_ptr[0]);
+    ASSERT_EQ(ref_inode_one.block_ptr[1], inode.block_ptr[1]);
+    ASSERT_EQ(ref_inode_one.block_ptr[2], inode.block_ptr[2]);
+    ASSERT_EQ(ref_inode_one.block_ptr[3], inode.block_ptr[3]);
+    ASSERT_EQ(ref_inode_one.block_ptr[4], inode.block_ptr[4]);
+
+    for (auto i = 0; i < file_name_len; i++) {
+        ASSERT_EQ(ref_inode_one.file_name[i], inode.file_name[i]);
+    }
+
+    fs->get_inode(3, inode);
+
+    ASSERT_EQ(ref_inode_two.type, inode.type);
+    ASSERT_EQ(ref_inode_two.file_len, inode.file_len);
+    ASSERT_EQ(ref_inode_two.block_ptr[0], inode.block_ptr[0]);
+    ASSERT_EQ(ref_inode_two.block_ptr[1], inode.block_ptr[1]);
+    ASSERT_EQ(ref_inode_two.block_ptr[2], inode.block_ptr[2]);
+    ASSERT_EQ(ref_inode_two.block_ptr[3], inode.block_ptr[3]);
+    ASSERT_EQ(ref_inode_two.block_ptr[4], inode.block_ptr[4]);
+
+    for (auto i = 0; i < file_name_len; i++) {
+        ASSERT_EQ(ref_inode_two.file_name[i], inode.file_name[i]);
+    }
+}
 }

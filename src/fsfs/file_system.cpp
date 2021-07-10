@@ -38,7 +38,7 @@ void FileSystem::mount() {
         throw std::runtime_error("Invalid amount of blocks number.");
     }
 
-    block_map.initialize(MB.n_data_blocks, MB.n_inode_blocks);
+    block_map.scan_blocks(disk, MB);
 }
 
 void FileSystem::unmount() {
@@ -82,7 +82,7 @@ void FileSystem::format(Disk& disk) {
     disk.unmount();
 }
 
-uint32_t FSFS::FileSystem::calc_mb_checksum(super_block& MB) {
+uint32_t FileSystem::calc_mb_checksum(super_block& MB) {
     const uint8_t xor_word[] = {0xFE, 0xED, 0xC0, 0xDE};
     uint8_t* raw_data = reinterpret_cast<data*>(&MB);
     uint8_t checksum[row_size] = {};
@@ -95,4 +95,66 @@ uint32_t FSFS::FileSystem::calc_mb_checksum(super_block& MB) {
 
     return *reinterpret_cast<uint32_t*>(checksum);
 }
+
+void FileSystem::set_inode(address inode_n, const inode_block& data_block) {
+    if (inode_n < 0) {
+        throw std::invalid_argument("Inode number must not be negative.");
+    }
+
+    if (inode_n >= MB.n_inode_blocks) {
+        throw std::invalid_argument("Inode number out of range.");
+    }
+
+    fsize n_meta_in_block = disk.get_block_size() / meta_block_size;
+    address inode_block_n = inode_n / n_meta_in_block;
+    address nth_inode = inode_n - inode_block_n * n_meta_in_block;
+
+    std::vector<data> inode_data(disk.get_block_size());
+    inode_block* const inodes =
+        reinterpret_cast<inode_block*>(inode_data.data());
+
+    disk.read(inode_blocks_offset + inode_block_n, inode_data.data(),
+              disk.get_block_size());
+
+    std::memcpy(&inodes[nth_inode], &data_block, meta_block_size);
+
+    disk.write(inode_blocks_offset + inode_block_n, inode_data.data(),
+               disk.get_block_size());
+
+    block_map.set_block<map_type::INODE>(inode_n, data_block.type);
+}
+
+void FileSystem::get_inode(address inode_n, inode_block& data_block) {
+    if (inode_n < 0) {
+        throw std::invalid_argument("Inode number must not be negative.");
+    }
+
+    if (inode_n >= MB.n_inode_blocks) {
+        throw std::invalid_argument("Inode number out of range.");
+    }
+
+    fsize n_meta_in_block = disk.get_block_size() / meta_block_size;
+    address inode_block_n = inode_n / n_meta_in_block;
+    address nth_inode = inode_n - inode_block_n * n_meta_in_block;
+
+    std::vector<data> inode_data(disk.get_block_size());
+    inode_block* const inodes =
+        reinterpret_cast<inode_block*>(inode_data.data());
+
+    disk.read(inode_blocks_offset + inode_block_n, inode_data.data(),
+              disk.get_block_size());
+
+    std::memcpy(&data_block, &inodes[nth_inode], meta_block_size);
+}
+
+void FileSystem::set_indirect_inode(address data_n, const data& data_block) {
+    if (data_n < 0) {
+        throw std::invalid_argument("Data block number must not be negative.");
+    }
+
+    if (data_n >= MB.n_data_blocks) {
+        throw std::invalid_argument("Data block number out of range.");
+    }
+}
+
 }
