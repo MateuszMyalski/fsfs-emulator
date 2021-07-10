@@ -18,11 +18,12 @@ class FileSystemTest : public ::testing::Test {
         disk->open("tmp_disk.img");
     }
     void TearDown() override {
-        std::remove("tmp_disk.img");
         delete fs;
 
         ASSERT_FALSE(disk->is_mounted());
         delete disk;
+
+        std::remove("tmp_disk.img");
     }
 };
 TEST_F(FileSystemTest, format) {
