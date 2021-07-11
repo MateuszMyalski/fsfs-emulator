@@ -59,8 +59,7 @@ void FileSystem::format(Disk& disk) {
     fsize real_disk_size = disk.get_disk_size() - 1;
     fsize meta_blocks = disk.get_block_size() / meta_block_size;
     fsize n_inode_blocks = real_disk_size * 0.1;
-    std::vector<meta_block> block = {};
-    block.resize(meta_blocks);
+    std::vector<meta_block> block(meta_blocks);
 
     std::copy_n(magic_number_lut, row_size, block[0].MB.magic_number);
     block[0].MB.block_size = disk.get_block_size();
