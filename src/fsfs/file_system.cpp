@@ -38,7 +38,11 @@ void FileSystem::mount() {
         throw std::runtime_error("Invalid amount of blocks number.");
     }
 
-    block_map.scan_blocks(disk, MB);
+    inode_bitmap.init(MB.n_inode_blocks);
+    data_bitmap.init(MB.n_data_blocks);
+
+    // TODO:
+    // Scan blocks for bitmat
 }
 
 void FileSystem::unmount() {
@@ -125,7 +129,7 @@ void FileSystem::set_inode(address inode_n, const inode_block& data_block) {
         throw std::runtime_error("Error while write operation.");
     }
 
-    block_map.set_block<map_type::INODE>(inode_n, data_block.type);
+    inode_bitmap.set_block(inode_n, static_cast<bool>(data_block.type));
 }
 
 void FileSystem::get_inode(address inode_n, inode_block& data_block) {

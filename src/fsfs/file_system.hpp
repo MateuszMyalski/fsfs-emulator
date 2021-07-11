@@ -3,14 +3,14 @@
 #include <common/types.hpp>
 #include <cstring>
 
-#include "block_map.hpp"
+#include "block_bitmap.hpp"
 #include "data_structs.hpp"
 #include "disk-emulator/disk.hpp"
 
 namespace FSFS {
 class FileSystem {
    public:
-    FileSystem(Disk& disk) : disk(disk), block_map() {
+    FileSystem(Disk& disk) : disk(disk), inode_bitmap(), data_bitmap() {
         std::memset(&MB, -1, sizeof(super_block));
     };
     void stats();
@@ -34,7 +34,8 @@ class FileSystem {
 
    private:
     Disk& disk;
-    BlockMap block_map;
+    BlockBitmap inode_bitmap;
+    BlockBitmap data_bitmap;
     super_block MB;
 
     static uint32_t calc_mb_checksum(super_block& MB);
