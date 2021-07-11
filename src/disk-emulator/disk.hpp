@@ -33,6 +33,5 @@ class Disk {
     };
 };
 
-typedef std::unique_ptr<Disk> disk_ptr;
 }
 #endif
