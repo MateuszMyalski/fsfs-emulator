@@ -34,14 +34,14 @@ TEST_F(FileSystemTest, format) {
     ASSERT_EQ(n_inode_blocks + n_data_blocks + 1, disk->get_disk_size());
 
     disk->mount();
-    meta_block r_data[block_size / meta_block_size] = {};
-    auto status = disk->read(super_block_offset, r_data->raw_data, block_size);
+    meta_block r_data[block_size / meta_fragm_size] = {};
+    auto status = disk->read(fs_offset_super_block, r_data->raw_data, block_size);
 
     ASSERT_EQ(status, block_size);
-    ASSERT_EQ(r_data[0].MB.magic_number[0], magic_number_lut[0]);
-    ASSERT_EQ(r_data[0].MB.magic_number[1], magic_number_lut[1]);
-    ASSERT_EQ(r_data[0].MB.magic_number[2], magic_number_lut[2]);
-    ASSERT_EQ(r_data[0].MB.magic_number[3], magic_number_lut[3]);
+    ASSERT_EQ(r_data[0].MB.magic_number[0], meta_magic_num_lut[0]);
+    ASSERT_EQ(r_data[0].MB.magic_number[1], meta_magic_num_lut[1]);
+    ASSERT_EQ(r_data[0].MB.magic_number[2], meta_magic_num_lut[2]);
+    ASSERT_EQ(r_data[0].MB.magic_number[3], meta_magic_num_lut[3]);
     ASSERT_EQ(r_data[0].MB.n_blocks, disk->get_disk_size());
     ASSERT_EQ(r_data[0].MB.n_data_blocks, n_data_blocks);
     ASSERT_EQ(r_data[0].MB.n_inode_blocks, n_inode_blocks);
@@ -50,21 +50,21 @@ TEST_F(FileSystemTest, format) {
 
     for (auto i = 0; i < n_inode_blocks; i++) {
         status =
-            disk->read(inode_blocks_offset + i, r_data->raw_data, block_size);
+            disk->read(fs_offset_inode_block + i, r_data->raw_data, block_size);
         ASSERT_EQ(status, block_size);
 
-        for (auto j = 0; j < block_size / meta_block_size; j++) {
-            for (auto chr_idx = 0; chr_idx < file_name_len; chr_idx++) {
+        for (auto j = 0; j < block_size / meta_fragm_size; j++) {
+            for (auto chr_idx = 0; chr_idx < meta_file_name_len; chr_idx++) {
                 ASSERT_EQ(r_data[j].inode.file_name[chr_idx],
-                          dummy_file_name[chr_idx]);
+                          inode_def_file_name[chr_idx]);
             }
 
-            for (auto ptr_idx = 0; ptr_idx < inode_n_block_ptr_len; ptr_idx++) {
-                ASSERT_EQ(r_data[j].inode.block_ptr[ptr_idx], inode_empty_ptr);
+            for (auto ptr_idx = 0; ptr_idx < meta_inode_ptr_len; ptr_idx++) {
+                ASSERT_EQ(r_data[j].inode.block_ptr[ptr_idx], fs_nullptr);
             }
 
-            ASSERT_EQ(r_data[j].inode.type, block_status::FREE);
-            ASSERT_EQ(r_data[j].inode.indirect_inode_ptr, inode_empty_ptr);
+            ASSERT_EQ(r_data[j].inode.type, block_status::Free);
+            ASSERT_EQ(r_data[j].inode.indirect_inode_ptr, fs_nullptr);
         }
     }
     disk->unmount();
@@ -109,9 +109,9 @@ TEST_F(FileSystemTest, set_and_get_inode) {
     inode_block ref_inode_two = {};
     inode_block inode = {};
 
-    ref_inode_one.type = block_status::USED;
+    ref_inode_one.type = block_status::Used;
     ref_inode_one.file_len = 1024 * 5;
-    ref_inode_one.indirect_inode_ptr = inode_empty_ptr;
+    ref_inode_one.indirect_inode_ptr = fs_nullptr;
     ref_inode_one.block_ptr[0] = 1;
     ref_inode_one.block_ptr[1] = 3;
     ref_inode_one.block_ptr[2] = 4;
@@ -119,9 +119,9 @@ TEST_F(FileSystemTest, set_and_get_inode) {
     ref_inode_one.block_ptr[4] = 8;
     std::memcpy(ref_inode_one.file_name, name, sizeof(name));
 
-    ref_inode_two.type = block_status::USED;
+    ref_inode_two.type = block_status::Used;
     ref_inode_two.file_len = 1024 * 2;
-    ref_inode_two.indirect_inode_ptr = inode_empty_ptr;
+    ref_inode_two.indirect_inode_ptr = fs_nullptr;
     ref_inode_two.block_ptr[0] = 20;
     ref_inode_two.block_ptr[1] = 31;
     ref_inode_two.block_ptr[2] = 451;
@@ -131,7 +131,7 @@ TEST_F(FileSystemTest, set_and_get_inode) {
 
     fs->set_inode(0, ref_inode_one);
     fs->set_inode(3, ref_inode_two);
-    fs->set_inode(block_size / meta_block_size + 4, ref_inode_one);
+    fs->set_inode(block_size / meta_fragm_size + 4, ref_inode_one);
 
     fs->get_inode(0, inode);
 
@@ -143,7 +143,7 @@ TEST_F(FileSystemTest, set_and_get_inode) {
     ASSERT_EQ(ref_inode_one.block_ptr[3], inode.block_ptr[3]);
     ASSERT_EQ(ref_inode_one.block_ptr[4], inode.block_ptr[4]);
 
-    for (auto i = 0; i < file_name_len; i++) {
+    for (auto i = 0; i < meta_file_name_len; i++) {
         ASSERT_EQ(ref_inode_one.file_name[i], inode.file_name[i]);
     }
 
@@ -157,11 +157,11 @@ TEST_F(FileSystemTest, set_and_get_inode) {
     ASSERT_EQ(ref_inode_two.block_ptr[3], inode.block_ptr[3]);
     ASSERT_EQ(ref_inode_two.block_ptr[4], inode.block_ptr[4]);
 
-    for (auto i = 0; i < file_name_len; i++) {
+    for (auto i = 0; i < meta_file_name_len; i++) {
         ASSERT_EQ(ref_inode_two.file_name[i], inode.file_name[i]);
     }
 
-    fs->get_inode(block_size / meta_block_size + 4, inode);
+    fs->get_inode(block_size / meta_fragm_size + 4, inode);
 
     ASSERT_EQ(ref_inode_one.type, inode.type);
     ASSERT_EQ(ref_inode_one.file_len, inode.file_len);
@@ -171,7 +171,7 @@ TEST_F(FileSystemTest, set_and_get_inode) {
     ASSERT_EQ(ref_inode_one.block_ptr[3], inode.block_ptr[3]);
     ASSERT_EQ(ref_inode_one.block_ptr[4], inode.block_ptr[4]);
 
-    for (auto i = 0; i < file_name_len; i++) {
+    for (auto i = 0; i < meta_file_name_len; i++) {
         ASSERT_EQ(ref_inode_one.file_name[i], inode.file_name[i]);
     }
 
