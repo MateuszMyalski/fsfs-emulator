@@ -39,10 +39,6 @@ class FileSystem {
 
     void set_data_block(address data_n, const data& data_block);
     void get_data_block(address data_n, data& data_block);
-
-    const super_block& get_super_block() const {
-        return const_cast<const super_block&>(MB);
-    }
 };
 }
 #endif
