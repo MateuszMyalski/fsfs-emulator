@@ -129,7 +129,7 @@ void FileSystem::set_inode(address inode_n, const inode_block& data_block) {
         throw std::runtime_error("Error while write operation.");
     }
 
-    inode_bitmap.set_block(inode_n, static_cast<bool>(data_block.type));
+    // inode_bitmap.set_block(inode_n, static_cast<bool>(data_block.type));
 }
 
 void FileSystem::get_inode(address inode_n, inode_block& data_block) {

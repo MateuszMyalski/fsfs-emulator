@@ -22,8 +22,14 @@ void BlockBitmap::init(address n_blocks) {
     }
 
     this->n_blocks = n_blocks;
-    bitmap.resize(n_blocks);
-    std::fill_n(bitmap.data(), n_blocks, 0x00);
+    fsize map_size = n_blocks / bitmap_row_length;
+    if ((n_blocks - map_size * bitmap_row_length) > 0) {
+        map_size += 1;
+    }
+
+    bitmap.resize(map_size);
+
+    std::fill_n(bitmap.data(), map_size, 0x00);
 }
 
 void BlockBitmap::set_block(address block_n, bool status) {
@@ -64,5 +70,39 @@ bool BlockBitmap::get_block_status(address block_n) {
     int32_t mask_shift = bitmap_row_length - calc_pos(block_n);
 
     return *block_map & (mask >> mask_shift);
+}
+
+address BlockBitmap::next_free(address block_offset) {
+    if (block_offset < 0) {
+        throw std::invalid_argument(
+            "Size number cannot be equal or lower than 0.");
+    }
+
+    if (block_offset >= n_blocks) {
+        throw std::runtime_error(
+            "Block offset is greater than block map size.");
+    }
+
+    size_t row = block_offset / bitmap_row_length;
+    for (; row < bitmap.size(); row++) {
+        if (!bitmap.at(row)) {
+            break;
+        }
+    }
+
+    if (row == bitmap.size()) {
+        return -1;
+    }
+
+    address real_idx = -1;
+    address next_free = 0;
+    for (auto i = calc_pos(block_offset); i < bitmap_row_length; i++) {
+        real_idx = next_free + block_offset;
+        if (!get_block_status(real_idx)) {
+            break;
+        }
+        next_free++;
+    }
+    return real_idx;
 }
 }

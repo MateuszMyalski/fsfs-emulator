@@ -9,6 +9,14 @@
 
 namespace FSFS {
 class FileSystem {
+   private:
+    Disk& disk;
+    super_block MB;
+    BlockBitmap inode_bitmap;
+    BlockBitmap data_bitmap;
+
+    static uint32_t calc_mb_checksum(super_block& MB);
+
    public:
     FileSystem(Disk& disk) : disk(disk), inode_bitmap(), data_bitmap() {
         std::memset(&MB, -1, sizeof(super_block));
@@ -32,13 +40,9 @@ class FileSystem {
     void set_data_block(address data_n, const data& data_block);
     void get_data_block(address data_n, data& data_block);
 
-   private:
-    Disk& disk;
-    BlockBitmap inode_bitmap;
-    BlockBitmap data_bitmap;
-    super_block MB;
-
-    static uint32_t calc_mb_checksum(super_block& MB);
+    const super_block& get_super_block() const {
+        return const_cast<const super_block&>(MB);
+    }
 };
 }
 #endif

@@ -20,10 +20,13 @@ class BlockBitmap {
 
    public:
     BlockBitmap() : n_blocks(-1){};
+    BlockBitmap(fsize n_blocks) : n_blocks(n_blocks) { init(n_blocks); };
 
-    void init(address n_blocks);
+    void init(fsize n_blocks);
     void set_block(address block_n, bool status);
     bool get_block_status(address block_n);
+
+    address next_free(address block_offset);
 };
 }
 #endif

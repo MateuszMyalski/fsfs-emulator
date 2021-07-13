@@ -72,4 +72,41 @@ TEST_F(BlockBitmapTest, set_and_get_block) {
     EXPECT_EQ(bitmap->get_block_status(block_size + 1), 0);
 }
 
+TEST_F(BlockBitmapTest, next_free_throw) {
+    EXPECT_THROW(bitmap->next_free(-1), std::invalid_argument);
+    EXPECT_THROW(bitmap->next_free(0), std::runtime_error);
+
+    bitmap->init(data_n_blocks);
+
+    EXPECT_THROW(bitmap->next_free(-1), std::invalid_argument);
+    EXPECT_THROW(bitmap->next_free(data_n_blocks), std::runtime_error);
+    EXPECT_THROW(bitmap->next_free(data_n_blocks + 1), std::runtime_error);
+}
+
+TEST_F(BlockBitmapTest, next_free) {
+    bitmap->init(data_n_blocks);
+
+    EXPECT_EQ(bitmap->next_free(0), 0);
+    EXPECT_EQ(bitmap->next_free(2), 2);
+
+    bitmap->set_block(0, 1);
+    bitmap->set_block(1, 1);
+    bitmap->set_block(2, 1);
+
+    EXPECT_EQ(bitmap->next_free(0), 3);
+
+    for (auto i = 0; i < bitmap_row_length; i++) {
+        bitmap->set_block(i, 1);
+    }
+
+    bitmap->set_block(bitmap_row_length - 5, 0);
+    EXPECT_EQ(bitmap->next_free(0), bitmap_row_length - 5);
+
+    for (auto i = 0; i < data_n_blocks; i++) {
+        bitmap->set_block(i, 1);
+    }
+
+    EXPECT_EQ(bitmap->next_free(0), -1);
+}
+
 }
