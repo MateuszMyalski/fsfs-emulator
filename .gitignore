@@ -37,3 +37,6 @@ _dep
 
 # VSCode Stuff
 *.vscode
+
+# Temp files
+_*
