@@ -85,7 +85,7 @@ address BlockBitmap::next_free(address block_offset) {
 
     size_t row = block_offset / bitmap_row_length;
     for (; row < bitmap.size(); row++) {
-        if (!bitmap.at(row)) {
+        if (bitmap.at(row) != std::numeric_limits<bitmap_t>::max()) {
             break;
         }
     }
@@ -94,14 +94,13 @@ address BlockBitmap::next_free(address block_offset) {
         return -1;
     }
 
-    address real_idx = -1;
-    address next_free = 0;
-    for (auto i = calc_pos(block_offset); i < bitmap_row_length; i++) {
-        real_idx = next_free + block_offset;
+    address pos_offset = calc_pos(block_offset);
+    address real_idx = row * bitmap_row_length + pos_offset;
+    for (auto i = pos_offset; i < bitmap_row_length; i++) {
         if (!get_block_status(real_idx)) {
             break;
         }
-        next_free++;
+        real_idx++;
     }
     return real_idx;
 }

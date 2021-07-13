@@ -107,6 +107,8 @@ TEST_F(BlockBitmapTest, next_free) {
     }
 
     EXPECT_EQ(bitmap->next_free(0), -1);
-}
 
+    bitmap->set_block(data_n_blocks - 1, 0);
+    EXPECT_EQ(bitmap->next_free(0), data_n_blocks - 1);
+}
 }
