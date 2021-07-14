@@ -16,12 +16,12 @@ class FileSystem {
     BlockBitmap data_bitmap;
 
     static uint32_t calc_mb_checksum(super_block& MB);
+    void scan_blocks();
 
    public:
     FileSystem(Disk& disk) : disk(disk), inode_bitmap(), data_bitmap() {
         std::memset(&MB, -1, sizeof(super_block));
     };
-    void stats();
 
     fsize read(address inode, data& data, fsize length, address offset);
     fsize write(address inode, data& data, fsize length, address offset);
@@ -39,6 +39,16 @@ class FileSystem {
 
     void set_data_block(address data_n, const data& data_block);
     void get_data_block(address data_n, data& data_block);
+
+    void stats();
+    void set_data_blocks_status(const inode_block& inode_data, bool allocated);
+
+    const BlockBitmap& get_inode_bitmap() const {
+        return const_cast<const BlockBitmap&>(inode_bitmap);
+    };
+    const BlockBitmap& get_data_bitmap() const {
+        return const_cast<const BlockBitmap&>(data_bitmap);
+    };
 };
 }
 #endif

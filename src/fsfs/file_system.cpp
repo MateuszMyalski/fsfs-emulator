@@ -38,11 +38,51 @@ void FileSystem::mount() {
         throw std::runtime_error("Invalid amount of blocks number.");
     }
 
+    scan_blocks();
+}
+
+void FileSystem::scan_blocks() {
     inode_bitmap.init(MB.n_inode_blocks);
     data_bitmap.init(MB.n_data_blocks);
 
-    // TODO:
-    // Scan blocks for bitmat
+    inode_block inode_data = {};
+    for (fsize inode_n = 0; inode_n < MB.n_inode_blocks; inode_n++) {
+        get_inode(inode_n, inode_data);
+        if (inode_data.type != block_status::Used) {
+            continue;
+        }
+
+        inode_bitmap.set_block(inode_n, 1);
+        set_data_blocks_status(inode_data, 1);
+    }
+}
+
+void FileSystem::set_data_blocks_status(const inode_block& inode_data,
+                                        bool allocated) {
+    for (fsize ptr_n = 0; ptr_n < meta_inode_ptr_len; ptr_n++) {
+        if (inode_data.block_ptr[ptr_n] == fs_nullptr) {
+            break;
+        }
+        data_bitmap.set_block(inode_data.block_ptr[ptr_n], allocated);
+    }
+
+    address indirect_block = inode_data.indirect_inode_ptr;
+    while (indirect_block != fs_nullptr) {
+        data_bitmap.set_block(indirect_block, allocated);
+        std::vector<data> data(MB.block_size, 0x0);
+        get_data_block(indirect_block, *data.data());
+        fsize n_addr = MB.block_size / sizeof(address);
+        address* addr = reinterpret_cast<address*>(data.data());
+
+        for (auto idx = 0; idx < n_addr - 1; idx++) {
+            if (addr[idx] == fs_nullptr) {
+                indirect_block = fs_nullptr;
+                break;
+            }
+            data_bitmap.set_block(addr[idx], allocated);
+        }
+        indirect_block = addr[n_addr - 1];
+    }
 }
 
 void FileSystem::unmount() {
@@ -120,6 +160,15 @@ void FileSystem::set_inode(address inode_n, const inode_block& data_block) {
     disk.read(fs_offset_inode_block + inode_block_n, inode_data.data(),
               MB.block_size);
 
+    set_data_blocks_status(inodes[nth_inode], 0);
+
+    if (data_block.type == block_status::Free) {
+        inode_bitmap.set_block(inode_n, 0);
+    } else {
+        inode_bitmap.set_block(inode_n, 1);
+        set_data_blocks_status(data_block, 1);
+    }
+
     std::memcpy(&inodes[nth_inode], &data_block, meta_fragm_size);
 
     auto n_written = disk.write(fs_offset_inode_block + inode_block_n,
@@ -128,8 +177,6 @@ void FileSystem::set_inode(address inode_n, const inode_block& data_block) {
     if (n_written != MB.block_size) {
         throw std::runtime_error("Error while write operation.");
     }
-
-    // inode_bitmap.set_block(inode_n, static_cast<bool>(data_block.type));
 }
 
 void FileSystem::get_inode(address inode_n, inode_block& data_block) {
