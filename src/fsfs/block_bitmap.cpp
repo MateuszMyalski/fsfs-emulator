@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 namespace FSFS {
-inline address BlockBitmap::calc_pos(address block_n) {
+inline address BlockBitmap::calc_pos(address block_n) const {
     auto row = block_n / bitmap_row_length;
     return block_n - (bitmap_row_length * row);
 }
@@ -13,6 +13,13 @@ bitmap_t* BlockBitmap::get_map_row(address block_n) {
         throw std::invalid_argument("Block idx out of bound.");
     }
     return &bitmap.at(block_n / bitmap_row_length);
+}
+
+const bitmap_t& BlockBitmap::get_map_row(address block_n) const {
+    if (block_n >= n_blocks || block_n < 0) {
+        throw std::invalid_argument("Block idx out of bound.");
+    }
+    return bitmap.at(block_n / bitmap_row_length);
 }
 
 void BlockBitmap::init(address n_blocks) {
@@ -54,7 +61,7 @@ void BlockBitmap::set_block(address block_n, bool status) {
     }
 }
 
-bool BlockBitmap::get_block_status(address block_n) {
+bool BlockBitmap::get_block_status(address block_n) const {
     if (block_n < 0) {
         throw std::invalid_argument(
             "Size number cannot be equal or lower than 0.");
@@ -65,11 +72,11 @@ bool BlockBitmap::get_block_status(address block_n) {
     }
 
     constexpr bitmap_t mask = (1UL << (bitmap_row_length - 1));
-    bitmap_t* block_map = get_map_row(block_n);
+    auto block_map = get_map_row(block_n);
 
     int32_t mask_shift = bitmap_row_length - calc_pos(block_n);
 
-    return *block_map & (mask >> mask_shift);
+    return block_map & (mask >> mask_shift);
 }
 
 address BlockBitmap::next_free(address block_offset) {
