@@ -382,4 +382,45 @@ TEST_F(FileSystemTest, set_blocks_blocks_discontinuity_test) {
 
     fs->unmount();
 }
+
+TEST_F(FileSystemTest, create_throw_test) {
+    FileSystem::format(*disk);
+    fs->mount();
+
+    fs->unmount();
+}
+
+TEST_F(FileSystemTest, create_test) {
+    FileSystem::format(*disk);
+    fs->mount();
+    inode_block inode = {};
+    const char* file1_name = "dummy1_file_name.txt";
+    const char* file2_name = "dummy2_file_name.txt";
+
+    auto file1_addr = fs->create(file1_name);
+    EXPECT_EQ(file1_addr, 0);
+    EXPECT_TRUE(fs->get_inode_bitmap().get_block_status(file1_addr));
+    fs->get_inode(file1_addr, inode);
+    for (auto& ptr : inode.block_ptr) {
+        EXPECT_EQ(ptr, fs_nullptr);
+    }
+    EXPECT_EQ(inode.type, block_status::Used);
+    EXPECT_EQ(inode.indirect_inode_ptr, fs_nullptr);
+    EXPECT_EQ(inode.file_len, 0);
+    EXPECT_STREQ(inode.file_name, file1_name);
+
+    auto file2_addr = fs->create(file2_name);
+    EXPECT_EQ(file2_addr, 1);
+    EXPECT_TRUE(fs->get_inode_bitmap().get_block_status(file2_addr));
+    fs->get_inode(file2_addr, inode);
+    for (auto& ptr : inode.block_ptr) {
+        EXPECT_EQ(ptr, fs_nullptr);
+    }
+    EXPECT_EQ(inode.type, block_status::Used);
+    EXPECT_EQ(inode.indirect_inode_ptr, fs_nullptr);
+    EXPECT_EQ(inode.file_len, 0);
+    EXPECT_STREQ(inode.file_name, file2_name);
+
+    fs->unmount();
+}
 }

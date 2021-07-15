@@ -38,7 +38,7 @@ static_assert(sizeof(super_block) == meta_fragm_size);
 struct inode_block {
     block_status type;
     data _padding[3];
-    data file_name[meta_file_name_len];
+    char file_name[meta_file_name_len];
     fsize file_len;
     address block_ptr[meta_inode_ptr_len];
     address indirect_inode_ptr;

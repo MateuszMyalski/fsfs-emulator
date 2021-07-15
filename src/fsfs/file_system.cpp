@@ -7,6 +7,26 @@
 
 namespace FSFS {
 
+address FileSystem::create(const char* file_name) {
+    address inode_addr = inode_bitmap.next_free(0);
+    if (inode_addr == -1) {
+        throw std::runtime_error("No more free inodes.");
+    }
+
+    inode_block inode = {};
+
+    inode.type = block_status::Used;
+    for (auto& ptr : inode.block_ptr) {
+        ptr = fs_nullptr;
+    }
+    inode.indirect_inode_ptr = fs_nullptr;
+    inode.file_len = 0;
+    std::strcpy(inode.file_name, file_name);
+    set_inode(inode_addr, inode);
+
+    return inode_addr;
+}
+
 void FileSystem::mount() {
     if (disk.is_mounted()) {
         throw std::runtime_error("Disk is already mounted.");

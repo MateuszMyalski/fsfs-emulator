@@ -30,9 +30,8 @@ class FileSystem {
     void mount();
     void unmount();
 
-    fsize create();
-    fsize remove();
-    fsize erease();
+    address create(const char* file_name);
+    void remove(address inode_n);
 
     void set_inode(address inode_n, const inode_block& inode_block);
     void get_inode(address inode_n, inode_block& inode_block);
