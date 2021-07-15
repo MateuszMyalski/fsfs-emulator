@@ -13,9 +13,8 @@
     - [X] `format` - formats the disk and initialzie propper file system structure
     - [X] `mount` - checks the integrity of the file system
     - [X] `unmount` - free up the disk
-    - [ ] `create` - create new inode
-    - [ ] `remove` - mark the inode as not allocated to be overwritten in the future or unlink data block
-    - [ ] `erease` - not only mark the inode as free but also overwrite the data
+    - [X] `create` - create new inode
+    - [X] `remove` - mark the inode as not allocated to be overwritten in the future or unlink data block
   - [ ] memory cell wear problem optimization
 - Disk space emulator
   - [X] based on chunks of memory that can be selected ~~at the compile time~~
@@ -49,9 +48,8 @@
     - [X] `format`
     - [X] `mount`
     - [X] `unmount`
-    - [ ] `create`
-    - [ ] `remove`
-    - [ ] `erease`
+    - [X] `create`
+    - [X] `remove`
 
 
 ## Sources - educational/inspiration
