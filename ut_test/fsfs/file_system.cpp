@@ -416,4 +416,23 @@ TEST_F(FileSystemTest, create_test) {
 
     fs->unmount();
 }
+
+TEST_F(FileSystemTest, remove_test) {
+    FileSystem::format(*disk);
+    fs->mount();
+
+    auto file1_addr = fs->create("dummy1_file.txt");
+    auto file2_addr = fs->create("dummy2_file.txt");
+    EXPECT_TRUE(fs->get_inode_bitmap().get_block_status(file1_addr));
+    EXPECT_TRUE(fs->get_inode_bitmap().get_block_status(file2_addr));
+
+    fs->remove(file1_addr);
+    EXPECT_FALSE(fs->get_inode_bitmap().get_block_status(file1_addr));
+    EXPECT_TRUE(fs->get_inode_bitmap().get_block_status(file2_addr));
+
+    fs->remove(file2_addr);
+    EXPECT_FALSE(fs->get_inode_bitmap().get_block_status(file2_addr));
+
+    fs->unmount();
+}
 }

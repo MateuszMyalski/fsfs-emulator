@@ -7,6 +7,15 @@
 
 namespace FSFS {
 
+void FileSystem::remove(address inode_n) {
+    if (!inode_bitmap.get_block_status(inode_n)) {
+        throw std::runtime_error("Cannot remove unused inode.");
+    }
+    inode_block inode = {};
+    inode.type = block_status::Free;
+    set_inode(inode_n, inode);
+}
+
 address FileSystem::create(const char* file_name) {
     address inode_addr = inode_bitmap.next_free(0);
     if (inode_addr == -1) {
