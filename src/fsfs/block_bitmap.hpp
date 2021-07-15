@@ -27,7 +27,7 @@ class BlockBitmap {
     void set_block(address block_n, bool status);
     bool get_block_status(address block_n) const;
 
-    address next_free(address block_offset);
+    address next_free(address block_offset) const;
 };
 }
 #endif

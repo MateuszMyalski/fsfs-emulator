@@ -17,7 +17,7 @@ constexpr address fs_offset_super_block = 0;
 constexpr address fs_offset_inode_block = 1;
 
 const data meta_magic_num_lut[] = {0xDE, 0xAD, 0xC0, 0xDE};
-const data inode_def_file_name[] = "././DuMmY  !@#$%^&*() fIlE nAmE";
+const char inode_def_file_name[] = "././DuMmY  !@#$%^&*() fIlE nAmE";
 constexpr address fs_nullptr = 0xFFFFFFFF;
 
 enum class block_status : data { Free = 0UL, Used };

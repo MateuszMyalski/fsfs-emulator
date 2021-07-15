@@ -79,7 +79,7 @@ bool BlockBitmap::get_block_status(address block_n) const {
     return block_map & (mask >> mask_shift);
 }
 
-address BlockBitmap::next_free(address block_offset) {
+address BlockBitmap::next_free(address block_offset) const {
     if (block_offset < 0) {
         throw std::invalid_argument(
             "Size number cannot be equal or lower than 0.");
