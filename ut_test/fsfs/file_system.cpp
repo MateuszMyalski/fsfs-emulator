@@ -383,13 +383,6 @@ TEST_F(FileSystemTest, set_blocks_blocks_discontinuity_test) {
     fs->unmount();
 }
 
-TEST_F(FileSystemTest, create_throw_test) {
-    FileSystem::format(*disk);
-    fs->mount();
-
-    fs->unmount();
-}
-
 TEST_F(FileSystemTest, create_test) {
     FileSystem::format(*disk);
     fs->mount();
