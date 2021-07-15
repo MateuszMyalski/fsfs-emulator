@@ -18,6 +18,8 @@ class FileSystemTest : public ::testing::Test {
         fs = new FileSystem(*disk);
         Disk::create("tmp_disk.img", 1024 * 10, block_size);
         disk->open("tmp_disk.img");
+
+        FileSystem::format(*disk);
     }
     void TearDown() override {
         delete fs;
@@ -65,7 +67,6 @@ class FileSystemTest : public ::testing::Test {
     }
 };
 TEST_F(FileSystemTest, format) {
-    FileSystem::format(*disk);
     fsize real_disk_size = disk->get_disk_size() - 1;
     fsize n_inode_blocks = real_disk_size * 0.1;
     fsize n_data_blocks = real_disk_size - n_inode_blocks;
@@ -114,7 +115,6 @@ TEST_F(FileSystemTest, format) {
 
 TEST_F(FileSystemTest, set_inode_throw) {
     inode_block dummy_inode = {};
-    FileSystem::format(*disk);
 
     ASSERT_THROW(fs->set_inode(0, dummy_inode), std::invalid_argument);
     fs->mount();
@@ -127,7 +127,6 @@ TEST_F(FileSystemTest, set_inode_throw) {
 
 TEST_F(FileSystemTest, get_inode_throw) {
     inode_block dummy_inode = {};
-    FileSystem::format(*disk);
 
     ASSERT_THROW(fs->get_inode(0, dummy_inode), std::invalid_argument);
     fs->mount();
@@ -139,7 +138,6 @@ TEST_F(FileSystemTest, get_inode_throw) {
 }
 
 TEST_F(FileSystemTest, set_and_get_inode) {
-    FileSystem::format(*disk);
     fs->mount();
 
     const char name[] = "Test inode";
@@ -241,7 +239,6 @@ TEST_F(FileSystemTest, set_and_get_inode) {
 
 TEST_F(FileSystemTest, set_data_block_throw) {
     data dummy_data[1] = {};
-    FileSystem::format(*disk);
 
     ASSERT_THROW(fs->set_data_block(0, dummy_data[0]), std::invalid_argument);
     fs->mount();
@@ -255,7 +252,6 @@ TEST_F(FileSystemTest, set_data_block_throw) {
 
 TEST_F(FileSystemTest, get_data_block_throw) {
     data dummy_data[1] = {};
-    FileSystem::format(*disk);
 
     ASSERT_THROW(fs->get_data_block(0, dummy_data[0]), std::invalid_argument);
     fs->mount();
@@ -271,7 +267,6 @@ TEST_F(FileSystemTest, set_and_get_block) {
     std::vector<data> ref_data(block_size);
     std::vector<data> r_data(block_size);
     std::memcpy(ref_data.data(), (void*)memcpy, block_size);
-    FileSystem::format(*disk);
     fs->mount();
 
     fs->set_data_block(345, ref_data.data()[0]);
@@ -285,7 +280,6 @@ TEST_F(FileSystemTest, set_and_get_block) {
 }
 
 TEST_F(FileSystemTest, set_blocks_blocks_noindirect_test) {
-    FileSystem::format(*disk);
     fs->mount();
 
     set_inode(0, fs_nullptr, 1);
@@ -308,7 +302,6 @@ TEST_F(FileSystemTest, set_blocks_blocks_noindirect_test) {
 }
 
 TEST_F(FileSystemTest, set_blocks_blocks_single_indirect_test) {
-    FileSystem::format(*disk);
     fs->mount();
 
     constexpr address indirect_block_addr = 1;
@@ -329,7 +322,6 @@ TEST_F(FileSystemTest, set_blocks_blocks_single_indirect_test) {
 }
 
 TEST_F(FileSystemTest, set_blocks_blocks_nested_indirect_test) {
-    FileSystem::format(*disk);
     fs->mount();
 
     constexpr address indirect_block_addr_one = 1;
@@ -352,7 +344,6 @@ TEST_F(FileSystemTest, set_blocks_blocks_nested_indirect_test) {
 }
 
 TEST_F(FileSystemTest, set_blocks_blocks_discontinuity_test) {
-    FileSystem::format(*disk);
     fs->mount();
 
     inode_block inode_data = {};
@@ -384,7 +375,6 @@ TEST_F(FileSystemTest, set_blocks_blocks_discontinuity_test) {
 }
 
 TEST_F(FileSystemTest, create_test) {
-    FileSystem::format(*disk);
     fs->mount();
     inode_block inode = {};
     const char* file1_name = "dummy1_file_name.txt";
@@ -417,8 +407,14 @@ TEST_F(FileSystemTest, create_test) {
     fs->unmount();
 }
 
+TEST_F(FileSystemTest, remove_throw_test) {
+    EXPECT_THROW(fs->remove(0), std::runtime_error);
+    fs->mount();
+    EXPECT_THROW(fs->remove(0), std::runtime_error);
+    fs->unmount();
+}
+
 TEST_F(FileSystemTest, remove_test) {
-    FileSystem::format(*disk);
     fs->mount();
 
     auto file1_addr = fs->create("dummy1_file.txt");
