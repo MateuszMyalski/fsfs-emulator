@@ -140,4 +140,69 @@ TEST_F(FileSystemTest, remove_test) {
 
     fs->unmount();
 }
+
+TEST_F(FileSystemTest, write_test_throw) {
+    std::array<data, block_size> wdata;
+    EXPECT_THROW(fs->write(0, *wdata.data(), wdata.size(), 0),
+                 std::runtime_error);
+    fs->mount();
+    EXPECT_THROW(fs->write(0, *wdata.data(), wdata.size(), 0),
+                 std::runtime_error);
+    EXPECT_THROW(fs->write(0, *wdata.data(), wdata.size(), -1),
+                 std::invalid_argument);
+    EXPECT_THROW(fs->write(0, *wdata.data(), -1, 0), std::invalid_argument);
+    EXPECT_THROW(fs->write(-1, *wdata.data(), -1, 0), std::invalid_argument);
+
+    address file_addr = fs->create("dummy_file.bin");
+    EXPECT_THROW(
+        fs->write(file_addr, *wdata.data(), wdata.size(), wdata.size() + 1),
+        std::runtime_error);
+    fs->unmount();
+}
+
+TEST_F(FileSystemTest, write_one_block_test) {
+    fs->mount();
+    inode_block inode = {};
+    std::array<data, block_size> wdata;
+    std::memcpy(wdata.data(), (void*)memcpy, wdata.size());
+
+    address file_addr = fs->create("dummy_file.bin");
+    auto n_written = fs->write(file_addr, *wdata.data(), wdata.size(), 0);
+    EXPECT_EQ(n_written, wdata.size());
+
+    EXPECT_TRUE(get_inode_status(file_addr));
+    dbg_io->get_inode(file_addr, inode);
+
+    EXPECT_EQ(inode.file_len, wdata.size());
+    std::array<data, wdata.size()> rdata;
+    dbg_io->get_data_block(inode.block_ptr[0], *rdata.data());
+    for (size_t i = 0; i < wdata.size(); i++) {
+        EXPECT_EQ(rdata[i], wdata[i]);
+    }
+
+    fs->unmount();
+}
+
+TEST_F(FileSystemTest, write_two_block_test) {
+    fs->mount();
+    inode_block inode = {};
+    std::array<data, block_size * 2> wdata;
+    std::memcpy(wdata.data(), (void*)memcpy, wdata.size());
+
+    address file_addr = fs->create("dummy_file.bin");
+    auto n_written = fs->write(file_addr, *wdata.data(), wdata.size(), 0);
+    ASSERT_EQ(n_written, wdata.size());
+
+    EXPECT_TRUE(get_inode_status(file_addr));
+    dbg_io->get_inode(file_addr, inode);
+
+    EXPECT_EQ(inode.file_len, wdata.size());
+    std::array<data, wdata.size()> rdata;
+    dbg_io->get_data_block(inode.block_ptr[0], *rdata.data());
+    for (size_t i = 0; i < wdata.size(); i++) {
+        EXPECT_EQ(rdata[i], wdata[i]);
+    }
+
+    fs->unmount();
+}
 }
