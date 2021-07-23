@@ -19,7 +19,7 @@ class Inode {
     struct {
         address low_block_n;
         address high_block_n;
-    } cashed_inodes;
+    } casched_inodes;
 
     address read_inode(address inode_n);
 
@@ -30,9 +30,6 @@ class Inode {
     inode_block& update_inode(address inode_n);
 
     address alloc_inode(address inode_n);
-
-    address get_nth_ptr(address inode_n, address ptr_n);
-    address set_nth_ptr(address inode_n, address ptr_n, address ptr);
 
     void commit_inode();
 };

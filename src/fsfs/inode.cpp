@@ -5,15 +5,15 @@ Inode::Inode(Disk& disk, const super_block& MB) : disk(disk), MB(MB) {
     rwbuffer.resize(MB.block_size);
     inodes = reinterpret_cast<inode_block*>(rwbuffer.data());
 
-    cashed_inodes.high_block_n = fs_nullptr;
-    cashed_inodes.low_block_n = fs_nullptr;
+    casched_inodes.high_block_n = fs_nullptr;
+    casched_inodes.low_block_n = fs_nullptr;
     casched_n_block = fs_nullptr;
 
     n_inodes_in_block = MB.block_size / meta_fragm_size;
 }
 address Inode::read_inode(address inode_n) {
-    if (((inode_n < cashed_inodes.high_block_n) &&
-         (inode_n >= cashed_inodes.low_block_n)) &&
+    if (((inode_n < casched_inodes.high_block_n) &&
+         (inode_n >= casched_inodes.low_block_n)) &&
         casched_n_block != fs_nullptr) {
         return inode_n;
     }
@@ -25,8 +25,9 @@ address Inode::read_inode(address inode_n) {
         throw std::runtime_error("Error while read operation.");
     }
 
-    cashed_inodes.low_block_n = inode_n * inode_block_n;
-    cashed_inodes.high_block_n = cashed_inodes.low_block_n + n_inodes_in_block;
+    casched_inodes.low_block_n = inode_n * inode_block_n;
+    casched_inodes.high_block_n =
+        casched_inodes.low_block_n + n_inodes_in_block;
     casched_n_block = inode_addr;
 }
 
@@ -38,7 +39,7 @@ const inode_block& Inode::get_inode(address inode_n) {
     }
     read_inode(inode_n);
 
-    address nth_inode = inode_n - cashed_inodes.low_block_n;
+    address nth_inode = inode_n - casched_inodes.low_block_n;
     return inodes[nth_inode];
 }
 
@@ -48,7 +49,7 @@ inode_block& Inode::update_inode(address inode_n) {
     }
     read_inode(inode_n);
 
-    address nth_inode = inode_n - cashed_inodes.low_block_n;
+    address nth_inode = inode_n - casched_inodes.low_block_n;
     return inodes[nth_inode];
 }
 
@@ -65,10 +66,6 @@ address Inode::alloc_inode(address inode_n) {
         ptr_n = fs_nullptr;
     }
 }
-
-address Inode::get_nth_ptr(address inode_n, address ptr_n) {}
-
-address Inode::set_nth_ptr(address inode_n, address ptr_n, address ptr) {}
 
 void Inode::commit_inode() {
     if (casched_n_block == fs_nullptr) {
