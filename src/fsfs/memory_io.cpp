@@ -4,6 +4,120 @@
 #include <cstring>
 namespace FSFS {
 
+address MemoryIO::set_nth_ptr(address inode_n, address ptr_n,
+                              address data_ptr) {
+    if ((inode_n < 0) || (ptr_n < 0) || (data_ptr < 0)) {
+        throw std::invalid_argument("Values cannot be negative");
+    }
+
+    if (!inode_bitmap.get_block_status(inode_n)) {
+        throw std::runtime_error("Inode is not allocated.");
+    }
+
+    inode_block inode = {};
+    get_inode(inode_n, inode);
+    if (ptr_n < meta_inode_ptr_len) {
+        inode.block_ptr[ptr_n] = data_ptr;
+        set_inode(inode_n, inode);
+        return data_ptr;
+    }
+
+    fsize n_ptr_in_indirect = (MB.block_size / sizeof(address) - 1);
+    int32_t nth_indirect = (ptr_n - meta_inode_ptr_len) / n_ptr_in_indirect;
+    std::vector<data> rwdata(MB.block_size);
+    address* indirect_addr = reinterpret_cast<address*>(rwdata.data());
+
+    address indir_node = inode.indirect_inode_ptr;
+    address curr_addr = data_bitmap.next_free(0);
+    if (inode.indirect_inode_ptr == fs_nullptr) {
+        inode.indirect_inode_ptr = curr_addr;
+    }
+
+    int32_t i = 0;
+    do {
+        if (indir_node == fs_nullptr) {
+            std::fill_n(indirect_addr, n_ptr_in_indirect + 1, fs_nullptr);
+            if ((i + 1) < nth_indirect) {
+                indirect_addr[n_ptr_in_indirect + 1] =
+                    data_bitmap.next_free(curr_addr + 1);
+            }
+            set_data_block(curr_addr, *rwdata.data());
+            curr_addr = indirect_addr[n_ptr_in_indirect + 1];
+        } else {
+            get_data_block(indir_node, *rwdata.data());
+            indir_node = indirect_addr[n_ptr_in_indirect + 1];
+        }
+        i++;
+    } while (i < nth_indirect);
+    int32_t indirect_ptr =
+        ptr_n - meta_inode_ptr_len - nth_indirect * n_ptr_in_indirect;
+    indirect_addr[indirect_ptr] = data_ptr;
+    set_data_block(curr_addr, *rwdata.data());
+    set_inode(inode_n, inode);
+    return data_ptr;
+
+    // if (inode.indirect_inode_ptr == fs_nullptr) {
+    //     std::fill_n(indirect_addr, n_ptr_in_indirect + 1, fs_nullptr);
+    //     address last_addr = data_bitmap.next_free(0);
+    //     address curr_addr = last_addr;
+    //     inode.indirect_inode_ptr = curr_addr;
+    //     if (nth_indirect > 0) {
+    //         last_addr = data_bitmap.next_free(last_addr + 1);
+    //         indirect_addr[n_ptr_in_indirect + 1] = last_addr;
+    //     }
+
+    //     for (int32_t i = 0; i < nth_indirect; i++) {
+    //         set_data_block(curr_addr, *rwdata.data());
+    //         curr_addr = last_addr;
+    //         std::fill_n(indirect_addr, n_ptr_in_indirect + 1, fs_nullptr);
+    //         if ((i + 1) < nth_indirect) {
+    //             last_addr = data_bitmap.next_free(curr_addr);
+    //             indirect_addr[n_ptr_in_indirect + 1] = last_addr;
+    //         }
+    //     }
+    //     int32_t indirect_ptr =
+    //         ptr_n - meta_inode_ptr_len - nth_indirect * n_ptr_in_indirect;
+    //     indirect_addr[indirect_ptr] = data_ptr;
+    //     set_data_block(curr_addr, *rwdata.data());
+    //     set_inode(inode_n, inode);
+    //     return data_ptr;
+    // }
+}
+address MemoryIO::get_nth_ptr(address inode_n, address ptr_n) {
+    if ((inode_n < 0) || (ptr_n < 0)) {
+        throw std::invalid_argument("Values cannot be negative");
+    }
+
+    if (!inode_bitmap.get_block_status(inode_n)) {
+        throw std::runtime_error("Inode is not allocated.");
+    }
+
+    inode_block inode = {};
+    get_inode(inode_n, inode);
+    int32_t n_used_ptrs = inode.file_len / MB.block_size;
+    n_used_ptrs += n_used_ptrs % MB.block_size ? 1 : 0;
+    if ((n_used_ptrs - 1) < ptr_n) {
+        return fs_nullptr;
+    }
+
+    if (ptr_n < meta_inode_ptr_len) {
+        return inode.block_ptr[ptr_n];
+    }
+
+    fsize n_ptr_in_indirect = (MB.block_size / sizeof(address) - 1);
+    int32_t nth_indirect = (ptr_n - meta_inode_ptr_len) / n_ptr_in_indirect;
+    std::vector<data> rdata(MB.block_size);
+    address* indirect_addr = reinterpret_cast<address*>(rdata.data());
+    get_data_block(inode.indirect_inode_ptr, *rdata.data());
+    for (int32_t i = 0; i < nth_indirect; i++) {
+        get_data_block(indirect_addr[n_ptr_in_indirect], *rdata.data());
+    }
+    int32_t indirect_ptr =
+        ptr_n - meta_inode_ptr_len - nth_indirect * n_ptr_in_indirect;
+
+    return indirect_addr[indirect_ptr];
+}
+
 void MemoryIO::init(const super_block& MB) {
     std::memcpy(&this->MB, &MB, sizeof(MB));
     inode_bitmap.init(MB.n_inode_blocks);

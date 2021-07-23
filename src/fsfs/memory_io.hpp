@@ -23,6 +23,8 @@ class MemoryIO {
 
     void set_inode(address inode_n, const inode_block& inode_block);
     void get_inode(address inode_n, inode_block& inode_block);
+    address set_nth_ptr(address inode_n, address ptr_n, address data_ptr);
+    address get_nth_ptr(address inode_n, address ptr_n);
 
     void set_data_block(address data_n, const data& data_block);
     void get_data_block(address data_n, data& data_block);

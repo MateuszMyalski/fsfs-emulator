@@ -146,14 +146,16 @@ TEST_F(FileSystemTest, write_test_throw) {
     EXPECT_THROW(fs->write(0, *wdata.data(), wdata.size(), 0),
                  std::runtime_error);
     fs->mount();
+
     EXPECT_THROW(fs->write(0, *wdata.data(), wdata.size(), 0),
                  std::runtime_error);
-    EXPECT_THROW(fs->write(0, *wdata.data(), wdata.size(), -1),
-                 std::invalid_argument);
-    EXPECT_THROW(fs->write(0, *wdata.data(), -1, 0), std::invalid_argument);
-    EXPECT_THROW(fs->write(-1, *wdata.data(), -1, 0), std::invalid_argument);
 
     address file_addr = fs->create("dummy_file.bin");
+    EXPECT_THROW(fs->write(file_addr, *wdata.data(), wdata.size(), -1),
+                 std::invalid_argument);
+    EXPECT_THROW(fs->write(file_addr, *wdata.data(), -1, 0),
+                 std::invalid_argument);
+    EXPECT_THROW(fs->write(-1, *wdata.data(), -1, 0), std::invalid_argument);
     EXPECT_THROW(
         fs->write(file_addr, *wdata.data(), wdata.size(), wdata.size() + 1),
         std::runtime_error);
@@ -201,6 +203,50 @@ TEST_F(FileSystemTest, write_two_block_test) {
     dbg_io->get_data_block(inode.block_ptr[0], *rdata.data());
     for (size_t i = 0; i < wdata.size(); i++) {
         EXPECT_EQ(rdata[i], wdata[i]);
+    }
+
+    fs->unmount();
+}
+
+TEST_F(FileSystemTest, read_throw_test) {
+    std::array<data, block_size> rdata;
+    EXPECT_THROW(fs->read(0, *rdata.data(), rdata.size(), 0),
+                 std::runtime_error);
+    fs->mount();
+
+    EXPECT_THROW(fs->read(0, *rdata.data(), rdata.size(), 0),
+                 std::runtime_error);
+
+    address file_addr = fs->create("dummy_file.bin");
+    EXPECT_THROW(fs->read(file_addr, *rdata.data(), rdata.size(), -1),
+                 std::invalid_argument);
+    EXPECT_THROW(fs->read(file_addr, *rdata.data(), -1, 0),
+                 std::invalid_argument);
+    EXPECT_THROW(fs->read(-1, *rdata.data(), -1, 0), std::invalid_argument);
+    EXPECT_THROW(
+        fs->read(file_addr, *rdata.data(), rdata.size(), rdata.size() + 1),
+        std::runtime_error);
+    fs->unmount();
+}
+
+TEST_F(FileSystemTest, read_one_block_test) {
+    inode_block inode = {};
+    inode.file_len = block_size;
+    inode.type = block_status::Used;
+    inode.block_ptr[0] = dbg_io->get_data_bitmap().next_free(0);
+    inode.indirect_inode_ptr = fs_nullptr;  // TODO: Fix this!
+    dbg_io->set_inode(0, inode);
+
+    std::array<data, block_size> ref_data;
+    std::memcpy(ref_data.data(), (void*)memcpy, ref_data.size());
+    dbg_io->set_data_block(inode.block_ptr[0], *ref_data.data());
+
+    fs->mount();
+    std::array<data, ref_data.size()> rdata;
+    fs->read(0, *rdata.data(), rdata.size(), rdata.size());
+
+    for (size_t i = 0; i < rdata.size(); i++) {
+        EXPECT_EQ(rdata[i], ref_data[i]);
     }
 
     fs->unmount();

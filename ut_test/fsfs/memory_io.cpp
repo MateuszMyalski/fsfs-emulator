@@ -8,6 +8,7 @@ namespace {
 class MemoryIOTest : public ::testing::Test {
    protected:
     constexpr static fsize block_size = 1024;
+    fsize n_ptr_in_data_block = block_size / sizeof(address);
     MemoryIO* io;
     Disk* disk;
     super_block MB;
@@ -53,7 +54,7 @@ class MemoryIOTest : public ::testing::Test {
 
     void alloc_indirect(address block_n, address data_offset,
                         address indirect_address) {
-        fsize n_addr = block_size / sizeof(address);
+        fsize n_addr = n_ptr_in_data_block;
         std::vector<data> indirect_block(block_size, 0x0);
         address* indirect_addr =
             reinterpret_cast<address*>(indirect_block.data());
@@ -307,4 +308,114 @@ TEST_F(MemoryIOTest, set_blocks_blocks_discontinuity_test) {
     EXPECT_FALSE(io->get_data_bitmap().get_block_status(4));
 }
 
+TEST_F(MemoryIOTest, set_nth_ptr_throw_test) {
+    EXPECT_THROW(io->set_nth_ptr(0, 0, 0), std::runtime_error);
+    io->init(MB);
+
+    EXPECT_THROW(io->set_nth_ptr(0, -1, 0), std::invalid_argument);
+    EXPECT_THROW(io->set_nth_ptr(0, 0, -1), std::invalid_argument);
+    EXPECT_THROW(io->set_nth_ptr(-1, 0, -1), std::invalid_argument);
+}
+
+TEST_F(MemoryIOTest, set_nth_ptr_test) {
+    io->init(MB);
+
+    inode_block inode = {};
+    inode.type = block_status::Used;
+    inode.file_len = 0;
+    inode.block_ptr[0] = fs_nullptr;
+    inode.indirect_inode_ptr = fs_nullptr;
+    inode.file_len = 5 * block_size;
+    io->set_inode(0, inode);
+
+    io->set_nth_ptr(0, 0, 0);
+    io->set_nth_ptr(0, 1, 1);
+    io->set_nth_ptr(0, 2, 2);
+    io->set_nth_ptr(0, 3, 3);
+    io->set_nth_ptr(0, 4, 4);
+
+    EXPECT_EQ(io->get_nth_ptr(0, 0), 0);
+    EXPECT_EQ(io->get_nth_ptr(0, 1), 1);
+    EXPECT_EQ(io->get_nth_ptr(0, 2), 2);
+    EXPECT_EQ(io->get_nth_ptr(0, 3), 3);
+    EXPECT_EQ(io->get_nth_ptr(0, 4), 4);
+}
+
+TEST_F(MemoryIOTest, set_nth_ptr_indirect_test) {
+    io->init(MB);
+
+    inode_block inode = {};
+    inode.type = block_status::Used;
+    inode.file_len = 0;
+    inode.block_ptr[0] = fs_nullptr;
+    inode.indirect_inode_ptr = fs_nullptr;
+    inode.file_len = 300 * block_size;
+    io->set_inode(0, inode);
+    io->set_inode(1, inode);
+    io->set_inode(2, inode);
+
+    io->set_nth_ptr(0, meta_inode_ptr_len, meta_inode_ptr_len);
+    io->set_nth_ptr(1, n_ptr_in_data_block + meta_inode_ptr_len,
+                    meta_inode_ptr_len + n_ptr_in_data_block);
+    // io->set_nth_ptr(0, n_ptr_in_data_block + 1, n_ptr_in_data_block + 1);
+    // io->set_nth_ptr(0, n_ptr_in_data_block - 1, n_ptr_in_data_block - 1);
+
+    EXPECT_EQ(io->get_nth_ptr(0, meta_inode_ptr_len), meta_inode_ptr_len);
+    EXPECT_EQ(io->get_nth_ptr(1, meta_inode_ptr_len + n_ptr_in_data_block),
+              meta_inode_ptr_len + n_ptr_in_data_block);
+    // EXPECT_EQ(io->get_nth_ptr(0, n_ptr_in_data_block + 1),
+    //           n_ptr_in_data_block + 1);
+    // EXPECT_EQ(io->get_nth_ptr(0, n_ptr_in_data_block - 1),
+    //           n_ptr_in_data_block - 1);
+}
+
+TEST_F(MemoryIOTest, get_nth_ptr_throw_test) {
+    EXPECT_THROW(io->get_nth_ptr(0, 0), std::runtime_error);
+    io->init(MB);
+
+    EXPECT_THROW(io->get_nth_ptr(0, -1), std::invalid_argument);
+    EXPECT_THROW(io->get_nth_ptr(-1, 0), std::invalid_argument);
+}
+
+TEST_F(MemoryIOTest, get_nth_ptr_test) {
+    io->init(MB);
+    inode_block inode = {};
+    inode.type = block_status::Used;
+    inode.file_len = 2 * block_size + 3;
+    inode.block_ptr[0] = 0;
+    inode.block_ptr[1] = 1;
+    inode.block_ptr[2] = 2;
+    inode.block_ptr[3] = 3;
+    inode.block_ptr[4] = fs_nullptr;
+    inode.indirect_inode_ptr = fs_nullptr;
+    io->set_inode(0, inode);
+
+    EXPECT_EQ(io->get_nth_ptr(0, 0), inode.block_ptr[0]);
+    EXPECT_EQ(io->get_nth_ptr(0, 1), inode.block_ptr[1]);
+    EXPECT_EQ(io->get_nth_ptr(0, 2), inode.block_ptr[2]);
+    EXPECT_EQ(io->get_nth_ptr(0, 3), fs_nullptr);
+    EXPECT_EQ(io->get_nth_ptr(0, 4), inode.block_ptr[4]);
+    EXPECT_EQ(io->get_nth_ptr(0, 5), fs_nullptr);
+}
+
+TEST_F(MemoryIOTest, get_nth_ptr_indirect_test) {
+    io->init(MB);
+    inode_block inode = {};
+    inode.type = block_status::Used;
+    inode.file_len = 1024 * block_size;
+    inode.indirect_inode_ptr = 1024;
+    alloc_indirect(1024, 5, 1025);
+    alloc_indirect(1025, n_ptr_in_data_block + 4, fs_nullptr);
+    io->set_inode(0, inode);
+
+    EXPECT_EQ(io->get_nth_ptr(0, 6), 6);
+    EXPECT_EQ(io->get_nth_ptr(0, 64), 64);
+    EXPECT_EQ(io->get_nth_ptr(0, 387), 387);
+    EXPECT_EQ(io->get_nth_ptr(0, n_ptr_in_data_block), n_ptr_in_data_block);
+    EXPECT_EQ(io->get_nth_ptr(0, n_ptr_in_data_block - 1),
+              n_ptr_in_data_block - 1);
+    EXPECT_EQ(io->get_nth_ptr(0, n_ptr_in_data_block + 1),
+              n_ptr_in_data_block + 1);
+    EXPECT_EQ(io->get_nth_ptr(0, 1024), fs_nullptr);
+}
 }

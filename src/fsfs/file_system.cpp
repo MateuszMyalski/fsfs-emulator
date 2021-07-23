@@ -2,10 +2,63 @@
 
 #include <algorithm>
 #include <exception>
+#include <iostream>
 
 #include "data_structs.hpp"
 
 namespace FSFS {
+
+fsize FileSystem::write(address inode_n, const data& wdata, fsize length,
+                        address offset) {
+    if (offset < 0 || length < 0) {
+        throw std::invalid_argument(
+            "Offset, length and inode number cannot be less than 0");
+    }
+
+    if (!io.get_inode_bitmap().get_block_status(inode_n)) {
+        throw std::runtime_error("Inode not allocated.");
+    }
+
+    if (length == 0) {
+        return 0;
+    }
+
+    inode_block inode = {};
+    io.get_inode(inode_n, inode);
+    if (inode.file_len < offset) {
+        throw std::runtime_error("Offset is greater than file length.");
+    }
+
+    return -1;
+}
+
+fsize FileSystem::read(address inode_n, data& rdata, fsize length,
+                       address offset) {
+    if (offset < 0 || length < 0) {
+        throw std::invalid_argument(
+            "Offset, length and inode number cannot be less than 0");
+    }
+
+    if (!io.get_inode_bitmap().get_block_status(inode_n)) {
+        throw std::runtime_error("Inode not allocated.");
+    }
+
+    if (length == 0) {
+        return 0;
+    }
+
+    inode_block inode = {};
+    io.get_inode(inode_n, inode);
+    if (inode.file_len < offset) {
+        throw std::runtime_error("Offset is greater than file length.");
+    }
+
+    address block_offset = offset / MB.block_size;
+    address last_block = block_offset + length / MB.block_size;
+    last_block += length % MB.block_size ? 1 : 0;
+
+    return -1;
+}
 
 void FileSystem::remove(address inode_n) {
     if (!io.get_inode_bitmap().get_block_status(inode_n)) {
