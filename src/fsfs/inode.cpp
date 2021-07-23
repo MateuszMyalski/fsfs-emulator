@@ -60,10 +60,10 @@ address Inode::alloc_inode(address inode_n) {
     update_inode(inode_n).type = block_status::Used;
     update_inode(inode_n).file_len = 0;
     update_inode(inode_n).file_name[0] = '\0';
+    update_inode(inode_n).indirect_inode_ptr = fs_nullptr;
     for (auto& ptr_n : update_inode(inode_n).block_ptr) {
         ptr_n = fs_nullptr;
     }
-    update_inode(inode_n).indirect_inode_ptr = fs_nullptr;
 }
 
 address Inode::get_nth_ptr(address inode_n, address ptr_n) {}
