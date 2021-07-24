@@ -5,16 +5,16 @@ Inode::Inode(Disk& disk, const super_block& MB) : disk(disk), MB(MB) {
     rwbuffer.resize(MB.block_size);
     inodes = reinterpret_cast<inode_block*>(rwbuffer.data());
 
-    casched_inodes.high_block_n = fs_nullptr;
-    casched_inodes.low_block_n = fs_nullptr;
-    casched_n_block = fs_nullptr;
+    casch_info.high_block_n = fs_nullptr;
+    casch_info.low_block_n = fs_nullptr;
+    casch_info.nth_block = fs_nullptr;
 
     n_inodes_in_block = MB.block_size / meta_fragm_size;
 }
 address Inode::read_inode(address inode_n) {
-    if (((inode_n < casched_inodes.high_block_n) &&
-         (inode_n >= casched_inodes.low_block_n)) &&
-        casched_n_block != fs_nullptr) {
+    if (((inode_n < casch_info.high_block_n) &&
+         (inode_n >= casch_info.low_block_n)) &&
+        casch_info.nth_block != fs_nullptr) {
         return inode_n;
     }
 
@@ -25,10 +25,9 @@ address Inode::read_inode(address inode_n) {
         throw std::runtime_error("Error while read operation.");
     }
 
-    casched_inodes.low_block_n = inode_n * inode_block_n;
-    casched_inodes.high_block_n =
-        casched_inodes.low_block_n + n_inodes_in_block;
-    casched_n_block = inode_addr;
+    casch_info.low_block_n = inode_n * inode_block_n;
+    casch_info.high_block_n = casch_info.low_block_n + n_inodes_in_block;
+    casch_info.nth_block = inode_addr;
 }
 
 Inode::~Inode() { disk.unmount(); }
@@ -39,7 +38,7 @@ const inode_block& Inode::get_inode(address inode_n) {
     }
     read_inode(inode_n);
 
-    address nth_inode = inode_n - casched_inodes.low_block_n;
+    address nth_inode = inode_n - casch_info.low_block_n;
     return inodes[nth_inode];
 }
 
@@ -49,7 +48,7 @@ inode_block& Inode::update_inode(address inode_n) {
     }
     read_inode(inode_n);
 
-    address nth_inode = inode_n - casched_inodes.low_block_n;
+    address nth_inode = inode_n - casch_info.low_block_n;
     return inodes[nth_inode];
 }
 
@@ -68,11 +67,12 @@ address Inode::alloc_inode(address inode_n) {
 }
 
 void Inode::commit_inode() {
-    if (casched_n_block == fs_nullptr) {
+    if (casch_info.nth_block == fs_nullptr) {
         return;
     }
 
-    fsize n_write = disk.write(casched_n_block, rwbuffer.data(), MB.block_size);
+    fsize n_write =
+        disk.write(casch_info.nth_block, rwbuffer.data(), MB.block_size);
     if (n_write != MB.block_size) {
         throw std::runtime_error("Error while write operation.");
     }

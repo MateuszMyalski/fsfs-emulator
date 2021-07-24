@@ -13,13 +13,13 @@ class Inode {
     const super_block& MB;
 
     std::vector<data> rwbuffer;
-    address casched_n_block;
     inode_block* inodes;
     fsize n_inodes_in_block;
     struct {
+        address nth_block;
         address low_block_n;
         address high_block_n;
-    } casched_inodes;
+    } casch_info;
 
     address read_inode(address inode_n);
 
