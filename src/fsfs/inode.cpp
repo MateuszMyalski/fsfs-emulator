@@ -28,11 +28,13 @@ address Inode::read_inode(address inode_n) {
     casch_info.low_block_n = inode_n * inode_block_n;
     casch_info.high_block_n = casch_info.low_block_n + n_inodes_in_block;
     casch_info.nth_block = inode_addr;
+
+    return inode_n;
 }
 
 Inode::~Inode() { disk.unmount(); }
 
-const inode_block& Inode::get_inode(address inode_n) {
+const inode_block& Inode::get(address inode_n) {
     if (inode_n < 0 || inode_n >= MB.n_inode_blocks) {
         throw std::invalid_argument("Invalid inode number.");
     }
@@ -42,7 +44,7 @@ const inode_block& Inode::get_inode(address inode_n) {
     return inodes[nth_inode];
 }
 
-inode_block& Inode::update_inode(address inode_n) {
+inode_block& Inode::update(address inode_n) {
     if (inode_n < 0 || inode_n >= MB.n_inode_blocks) {
         throw std::invalid_argument("Invalid inode number.");
     }
@@ -52,21 +54,23 @@ inode_block& Inode::update_inode(address inode_n) {
     return inodes[nth_inode];
 }
 
-address Inode::alloc_inode(address inode_n) {
-    if (get_inode(inode_n).type == block_status::Used) {
+address Inode::alloc(address inode_n) {
+    if (get(inode_n).type == block_status::Used) {
         return fs_nullptr;
     }
 
-    update_inode(inode_n).type = block_status::Used;
-    update_inode(inode_n).file_len = 0;
-    update_inode(inode_n).file_name[0] = '\0';
-    update_inode(inode_n).indirect_inode_ptr = fs_nullptr;
-    for (auto& ptr_n : update_inode(inode_n).block_ptr) {
+    update(inode_n).type = block_status::Used;
+    update(inode_n).file_len = 0;
+    update(inode_n).file_name[0] = '\0';
+    update(inode_n).indirect_inode_ptr = fs_nullptr;
+    for (auto& ptr_n : update(inode_n).block_ptr) {
         ptr_n = fs_nullptr;
     }
+
+    return inode_n;
 }
 
-void Inode::commit_inode() {
+void Inode::commit() {
     if (casch_info.nth_block == fs_nullptr) {
         return;
     }

@@ -26,12 +26,12 @@ class Inode {
    public:
     Inode(Disk& disk, const super_block& MB);
     ~Inode();
-    const inode_block& get_inode(address inode_n);
-    inode_block& update_inode(address inode_n);
+    const inode_block& get(address inode_n);
+    inode_block& update(address inode_n);
 
-    address alloc_inode(address inode_n);
+    address alloc(address inode_n);
 
-    void commit_inode();
+    void commit();
 };
 }
 
