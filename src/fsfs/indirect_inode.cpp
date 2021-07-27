@@ -5,15 +5,20 @@ namespace FSFS {
 IndirectInode::IndirectInode(Disk& disk, const super_block& MB)
     : disk(disk), MB(MB) {
     disk.mount();
-    rwbuffer.resize(MB.block_size);
-    indirect_ptr = reinterpret_cast<address*>(rwbuffer.data());
-
-    casch_info.reset();
-
-    n_ptrs_in_block = MB.block_size / sizeof(address);
+    reinit();
 }
 
 IndirectInode::~IndirectInode() { disk.unmount(); }
+
+void IndirectInode::reinit() {
+    casch_info.reset();
+
+    data_block_offset = fs_offset_inode_block + MB.n_inode_blocks;
+    n_ptrs_in_block = MB.block_size / sizeof(address);
+
+    rwbuffer.resize(MB.block_size);
+    indirect_ptr = reinterpret_cast<address*>(rwbuffer.data());
+}
 
 address IndirectInode::read_indirect(address base_addr, address ptr_n) {
     if (((ptr_n <= casch_info.high_ptr_n) && (ptr_n >= casch_info.low_ptr_n)) &&
@@ -54,6 +59,8 @@ address IndirectInode::read_indirect(address base_addr, address ptr_n) {
     casch_info.high_ptr_n = casch_info.low_ptr_n + (n_ptrs_in_block - 2);
     casch_info.nth_indirect = nth_indirect;
     casch_info.base_addr = base_addr;
+
+    return ptr_n;
 }
 
 address IndirectInode::random_read(address data_n) {
@@ -148,6 +155,8 @@ address IndirectInode::alloc(address data_n) {
     for (auto i = 0; i < n_ptrs_in_block; i++) {
         indirect_ptr[i] = fs_nullptr;
     }
+
+    return data_n;
 }
 
 void IndirectInode::commit() {

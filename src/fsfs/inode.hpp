@@ -11,14 +11,20 @@ class Inode {
    private:
     Disk& disk;
     const super_block& MB;
+    address n_inodes_in_block;
 
     std::vector<data> rwbuffer;
     inode_block* inodes;
-    fsize n_inodes_in_block;
     struct {
         address nth_block;
         address low_block_n;
         address high_block_n;
+
+        void reset() {
+            nth_block = fs_nullptr;
+            low_block_n = fs_nullptr;
+            high_block_n = fs_nullptr;
+        }
     } casch_info;
 
     address read_inode(address inode_n);
@@ -30,7 +36,7 @@ class Inode {
     inode_block& update(address inode_n);
 
     address alloc(address inode_n);
-
+    void reinit();
     void commit();
 };
 }

@@ -2,15 +2,17 @@
 namespace FSFS {
 Inode::Inode(Disk& disk, const super_block& MB) : disk(disk), MB(MB) {
     disk.mount();
+    reinit();
+}
+
+void Inode::reinit() {
+    casch_info.reset();
+    n_inodes_in_block = MB.block_size / meta_fragm_size;
+
     rwbuffer.resize(MB.block_size);
     inodes = reinterpret_cast<inode_block*>(rwbuffer.data());
-
-    casch_info.high_block_n = fs_nullptr;
-    casch_info.low_block_n = fs_nullptr;
-    casch_info.nth_block = fs_nullptr;
-
-    n_inodes_in_block = MB.block_size / meta_fragm_size;
 }
+
 address Inode::read_inode(address inode_n) {
     if (((inode_n < casch_info.high_block_n) &&
          (inode_n >= casch_info.low_block_n)) &&
@@ -25,7 +27,7 @@ address Inode::read_inode(address inode_n) {
         throw std::runtime_error("Error while read operation.");
     }
 
-    casch_info.low_block_n = inode_n * inode_block_n;
+    casch_info.low_block_n = n_inodes_in_block * inode_block_n;
     casch_info.high_block_n = casch_info.low_block_n + n_inodes_in_block;
     casch_info.nth_block = inode_addr;
 

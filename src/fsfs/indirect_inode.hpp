@@ -11,7 +11,7 @@ class IndirectInode {
    private:
     Disk& disk;
     const super_block& MB;
-    address data_block_offset = fs_offset_inode_block + MB.n_inode_blocks;
+    address data_block_offset;
 
     std::vector<data> rwbuffer;
     address* indirect_ptr;
@@ -48,6 +48,7 @@ class IndirectInode {
 
     address alloc(address data_n);
     void commit();
+    void reinit();
 };
 }
 #endif
