@@ -24,7 +24,7 @@ fsize FileSystem::write(address inode_n, const data& wdata, fsize length,
     }
 
     inode_block inode = {};
-    io.get_inode(inode_n, inode);
+    // io.get_inode(inode_n, inode);
     if (inode.file_len < offset) {
         throw std::runtime_error("Offset is greater than file length.");
     }
@@ -39,16 +39,16 @@ fsize FileSystem::read(address inode_n, data& rdata, fsize length,
             "Offset, length and inode number cannot be less than 0");
     }
 
-    if (!io.get_inode_bitmap().get_block_status(inode_n)) {
-        throw std::runtime_error("Inode not allocated.");
-    }
+    // if (!io.get_inode_bitmap().get_block_status(inode_n)) {
+    //     throw std::runtime_error("Inode not allocated.");
+    // }
 
     if (length == 0) {
         return 0;
     }
 
     inode_block inode = {};
-    io.get_inode(inode_n, inode);
+    // io.get_inode(inode_n, inode);
     if (inode.file_len < offset) {
         throw std::runtime_error("Offset is greater than file length.");
     }
@@ -66,7 +66,7 @@ void FileSystem::remove(address inode_n) {
     }
     inode_block inode = {};
     inode.type = block_status::Free;
-    io.set_inode(inode_n, inode);
+    // io.set_inode(inode_n, inode);
 }
 
 address FileSystem::create(const char* file_name) {
@@ -84,7 +84,7 @@ address FileSystem::create(const char* file_name) {
     inode.indirect_inode_ptr = fs_nullptr;
     inode.file_len = 0;
     std::strcpy(inode.file_name, file_name);
-    io.set_inode(inode_addr, inode);
+    // io.set_inode(inode_addr, inode);
 
     return inode_addr;
 }
