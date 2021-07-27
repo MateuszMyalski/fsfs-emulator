@@ -4,6 +4,8 @@
 #include "common/types.hpp"
 #include "data_structs.hpp"
 #include "disk-emulator/disk.hpp"
+#include "indirect_inode.hpp"
+#include "inode.hpp"
 
 namespace FSFS {
 class MemoryIO {
@@ -12,25 +14,35 @@ class MemoryIO {
     super_block MB;
     BlockBitmap inode_bitmap;
     BlockBitmap data_bitmap;
+    IndirectInode iinode;
+    Inode inode;
+
+    void set_data_blocks_status(address inode_n, bool allocated);
 
    public:
-    MemoryIO(Disk& disk) : disk(disk), MB(), inode_bitmap(), data_bitmap() {
-        disk.mount();
-    };
-    ~MemoryIO() { disk.unmount(); };
+    MemoryIO(Disk& disk)
+        : disk(disk),
+          MB(),
+          inode_bitmap(),
+          data_bitmap(),
+          iinode(disk, MB),
+          inode(disk, MB){};
 
     void init(const super_block& MB);
 
-    void set_inode(address inode_n, const inode_block& inode_block);
-    void get_inode(address inode_n, inode_block& inode_block);
-    address set_nth_ptr(address inode_n, address ptr_n, address data_ptr);
-    address get_nth_ptr(address inode_n, address ptr_n);
+    address alloc_inode(const char* file_name);
+    address dealloc_inode(address inode_n);
 
-    void set_data_block(address data_n, const data& data_block);
-    void get_data_block(address data_n, data& data_block);
+    address rename_inode(address inode_n, const char* file_name);
+    fsize get_inode_length(address inode_n);
+    address get_inode_file_name(address inode_n, char* file_name_buffer);
+
+    address add_data(address inode_n, const data& wdata, fsize length);
+    address edit_data(address inode_n, const data& wdata, address offset,
+                      fsize length);
 
     void scan_blocks();
-    void set_data_blocks_status(const inode_block& inode_data, bool allocated);
+    fsize bytes_to_blocks(fsize length);
 
     const BlockBitmap& get_inode_bitmap() const {
         return const_cast<const BlockBitmap&>(inode_bitmap);
