@@ -73,6 +73,7 @@ address MemoryIO::dealloc_inode(address inode_n) {
     inode.commit();
 
     set_data_blocks_status(inode_n, 0);
+    inode_bitmap.set_block(inode_n, 0);
 
     return inode_n;
 }

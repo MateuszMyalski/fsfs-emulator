@@ -147,4 +147,34 @@ TEST_F(MemoryIOTest, scan_blocks_test) {
         EXPECT_FALSE(io->get_inode_bitmap().get_block_status(data_n));
     }
 }
+
+TEST_F(MemoryIOTest, alloc_inode_test) {
+    set_dummy_blocks();
+    io->init(MB);
+    io->scan_blocks();
+
+    EXPECT_EQ(io->alloc_inode("TOO LONG FILE NAME 012345678910"), fs_nullptr);
+
+    auto addr = io->alloc_inode("Inode name");
+
+    EXPECT_TRUE(io->get_inode_bitmap().get_block_status(addr));
+}
+
+TEST_F(MemoryIOTest, dealloc_inode_test) {
+    set_dummy_blocks();
+    io->init(MB);
+    io->scan_blocks();
+
+    EXPECT_EQ(io->dealloc_inode(MB.n_inode_blocks - 1), fs_nullptr);
+
+    ASSERT_TRUE(io->get_inode_bitmap().get_block_status(1));
+
+    EXPECT_EQ(io->dealloc_inode(1), 1);
+
+    EXPECT_FALSE(io->get_inode_bitmap().get_block_status(1));
+    for (fsize ptr_n = 0; ptr_n < meta_inode_ptr_len; ptr_n++) {
+        EXPECT_FALSE(
+            io->get_data_bitmap().get_block_status(used_data_blocks.at(ptr_n)));
+    }
+}
 }
