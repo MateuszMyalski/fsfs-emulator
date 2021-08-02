@@ -34,6 +34,10 @@ class MemoryIOTest : public ::testing::Test {
         iinode = new IndirectInode(*disk, MB);
 
         io = new MemoryIO(*disk);
+
+        set_dummy_blocks();
+        io->init(MB);
+        io->scan_blocks();
     }
 
     void TearDown() override {
@@ -109,8 +113,6 @@ class MemoryIOTest : public ::testing::Test {
 };
 
 TEST_F(MemoryIOTest, bytes_to_block_test) {
-    io->init(MB);
-
     EXPECT_EQ(io->bytes_to_blocks(0), 0);
     EXPECT_EQ(io->bytes_to_blocks(MB.block_size / 2), 1);
     EXPECT_EQ(io->bytes_to_blocks(MB.block_size), 1);
@@ -121,10 +123,6 @@ TEST_F(MemoryIOTest, bytes_to_block_test) {
 }
 
 TEST_F(MemoryIOTest, scan_blocks_test) {
-    set_dummy_blocks();
-    io->init(MB);
-    io->scan_blocks();
-
     for (const auto inode_n : used_inode_blocks) {
         EXPECT_TRUE(io->get_inode_bitmap().get_block_status(inode_n));
     }
@@ -149,10 +147,6 @@ TEST_F(MemoryIOTest, scan_blocks_test) {
 }
 
 TEST_F(MemoryIOTest, alloc_inode_test) {
-    set_dummy_blocks();
-    io->init(MB);
-    io->scan_blocks();
-
     EXPECT_EQ(io->alloc_inode("TOO LONG FILE NAME 012345678910"), fs_nullptr);
 
     auto addr = io->alloc_inode("Inode name");
@@ -161,10 +155,6 @@ TEST_F(MemoryIOTest, alloc_inode_test) {
 }
 
 TEST_F(MemoryIOTest, dealloc_inode_test) {
-    set_dummy_blocks();
-    io->init(MB);
-    io->scan_blocks();
-
     EXPECT_EQ(io->dealloc_inode(MB.n_inode_blocks - 1), fs_nullptr);
 
     ASSERT_TRUE(io->get_inode_bitmap().get_block_status(1));
@@ -176,5 +166,20 @@ TEST_F(MemoryIOTest, dealloc_inode_test) {
         EXPECT_FALSE(
             io->get_data_bitmap().get_block_status(used_data_blocks.at(ptr_n)));
     }
+}
+
+TEST_F(MemoryIOTest, rename_inode_test) {
+    constexpr const char* file_name_ref = "Inode name_ref";
+    address addr = io->alloc_inode(file_name_ref);
+
+    char file_name[meta_file_name_len] = {};
+    io->get_inode_file_name(addr, file_name);
+    EXPECT_STREQ(file_name, file_name_ref);
+
+    constexpr const char* file_name_ref2 = "New inode name";
+    io->rename_inode(addr, file_name_ref2);
+    file_name[0] = '\0';
+    io->get_inode_file_name(addr, file_name);
+    EXPECT_STREQ(file_name, file_name_ref2);
 }
 }
