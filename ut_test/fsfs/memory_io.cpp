@@ -158,6 +158,10 @@ TEST_F(MemoryIOTest, dealloc_inode_test) {
     EXPECT_EQ(io->dealloc_inode(MB.n_inode_blocks - 1), fs_nullptr);
 
     ASSERT_TRUE(io->get_inode_bitmap().get_block_status(1));
+    for (fsize ptr_n = 0; ptr_n < meta_inode_ptr_len; ptr_n++) {
+        ASSERT_TRUE(
+            io->get_data_bitmap().get_block_status(used_data_blocks.at(ptr_n)));
+    }
 
     EXPECT_EQ(io->dealloc_inode(1), 1);
 
