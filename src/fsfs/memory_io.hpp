@@ -19,6 +19,16 @@ class MemoryIO {
 
     void set_data_blocks_status(address inode_n, bool allocated);
 
+    template <typename Self>
+    static decltype(auto) get_inode_bitmap_common(Self* self) {
+        return (self->inode_bitmap);
+    }
+
+    template <typename Self>
+    static decltype(auto) get_data_bitmap_common(Self* self) {
+        return (self->data_bitmap);
+    }
+
    public:
     MemoryIO(Disk& disk)
         : disk(disk),
@@ -44,12 +54,20 @@ class MemoryIO {
     void scan_blocks();
     fsize bytes_to_blocks(fsize length);
 
-    const BlockBitmap& get_inode_bitmap() const {
-        return const_cast<const BlockBitmap&>(inode_bitmap);
-    };
-    const BlockBitmap& get_data_bitmap() const {
-        return const_cast<const BlockBitmap&>(data_bitmap);
-    };
+    decltype(auto) get_inode_bitmap() const {
+        return get_inode_bitmap_common(this);
+    }
+
+    decltype(auto) get_data_bitmap() const {
+        return get_data_bitmap_common(this);
+    }
+
+    // const BlockBitmap& get_inode_bitmap() const {
+    //     return const_cast<const BlockBitmap&>(inode_bitmap);
+    // };
+    // const BlockBitmap& get_data_bitmap() const {
+    //     return const_cast<const BlockBitmap&>(data_bitmap);
+    // };
 };
 }
 #endif
