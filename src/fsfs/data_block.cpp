@@ -42,7 +42,7 @@ fsize DataBlock::write(address block_n, const data* wdata, fsize offset,
     }
 
     fsize real_offset = offset >= 0 ? offset : MB.block_size + offset;
-    fsize writtable_space = MB.block_size - offset;
+    fsize writtable_space = MB.block_size - real_offset;
     if (length > writtable_space || length < 0) {
         throw std::invalid_argument(
             "Length cannot be greater than writtable space and lower than "
@@ -56,7 +56,7 @@ fsize DataBlock::write(address block_n, const data* wdata, fsize offset,
     read_block(block_n);
     std::memcpy(rwbuffer.data() + real_offset, wdata, length);
     auto n_write = disk.write(casched_block, rwbuffer.data(), MB.block_size);
-    if (n_write != length) {
+    if (n_write != MB.block_size) {
         throw std::runtime_error("Error while write operaion.");
     }
 
@@ -75,7 +75,7 @@ fsize DataBlock::read(address block_n, data* rdata, fsize offset,
     }
 
     fsize real_offset = offset >= 0 ? offset : MB.block_size + offset;
-    fsize readable_space = MB.block_size - offset;
+    fsize readable_space = MB.block_size - real_offset;
     if (length > readable_space || length < 0) {
         throw std::invalid_argument(
             "Length cannot be greater than readable space and lower than "
