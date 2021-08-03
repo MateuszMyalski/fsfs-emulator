@@ -47,9 +47,9 @@ class MemoryIO {
     fsize get_inode_length(address inode_n);
     address get_inode_file_name(address inode_n, char* file_name_buffer);
 
-    address add_data(address inode_n, const data& wdata, fsize length);
-    address edit_data(address inode_n, const data& wdata, address offset,
-                      fsize length);
+    fsize add_data(address inode_n, const data& wdata, fsize length);
+    fsize edit_data(address inode_n, const data& wdata, address offset,
+                    fsize length);
 
     void scan_blocks();
     fsize bytes_to_blocks(fsize length);
@@ -61,13 +61,6 @@ class MemoryIO {
     decltype(auto) get_data_bitmap() const {
         return get_data_bitmap_common(this);
     }
-
-    // const BlockBitmap& get_inode_bitmap() const {
-    //     return const_cast<const BlockBitmap&>(inode_bitmap);
-    // };
-    // const BlockBitmap& get_data_bitmap() const {
-    //     return const_cast<const BlockBitmap&>(data_bitmap);
-    // };
 };
 }
 #endif
