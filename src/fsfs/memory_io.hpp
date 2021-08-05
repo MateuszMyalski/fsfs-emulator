@@ -2,6 +2,7 @@
 #define FSFS_MEMORY_IO_HPP
 #include "block_bitmap.hpp"
 #include "common/types.hpp"
+#include "data_block.hpp"
 #include "data_structs.hpp"
 #include "disk-emulator/disk.hpp"
 #include "indirect_inode.hpp"
@@ -14,6 +15,7 @@ class MemoryIO {
     super_block MB;
     BlockBitmap inode_bitmap;
     BlockBitmap data_bitmap;
+    DataBlock data_block;
     IndirectInode iinode;
     Inode inode;
 
@@ -35,6 +37,7 @@ class MemoryIO {
           MB(),
           inode_bitmap(),
           data_bitmap(),
+          data_block(disk, MB),
           iinode(disk, MB),
           inode(disk, MB){};
 
@@ -47,8 +50,8 @@ class MemoryIO {
     fsize get_inode_length(address inode_n);
     address get_inode_file_name(address inode_n, char* file_name_buffer);
 
-    fsize add_data(address inode_n, const data& wdata, fsize length);
-    fsize edit_data(address inode_n, const data& wdata, address offset,
+    fsize add_data(address inode_n, const data* wdata, fsize length);
+    fsize edit_data(address inode_n, const data* wdata, address offset,
                     fsize length);
 
     void scan_blocks();

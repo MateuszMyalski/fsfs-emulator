@@ -1,6 +1,7 @@
 #include "fsfs/memory_io.hpp"
 
 #include "disk-emulator/disk.hpp"
+#include "fsfs/data_block.hpp"
 #include "fsfs/file_system.hpp"
 #include "fsfs/indirect_inode.hpp"
 #include "fsfs/inode.hpp"
@@ -10,6 +11,7 @@ namespace {
 class MemoryIOTest : public ::testing::Test {
    protected:
     constexpr static fsize block_size = 1024;
+    address invalid_inode = fs_nullptr;
     fsize n_ptr_in_data_block = block_size / sizeof(address);
 
     MemoryIO* io;
@@ -38,6 +40,8 @@ class MemoryIOTest : public ::testing::Test {
         set_dummy_blocks();
         io->init(MB);
         io->scan_blocks();
+
+        invalid_inode = MB.n_inode_blocks - 1;
     }
 
     void TearDown() override {
@@ -155,7 +159,7 @@ TEST_F(MemoryIOTest, alloc_inode_test) {
 }
 
 TEST_F(MemoryIOTest, dealloc_inode_test) {
-    EXPECT_EQ(io->dealloc_inode(MB.n_inode_blocks - 1), fs_nullptr);
+    EXPECT_EQ(io->dealloc_inode(invalid_inode), fs_nullptr);
 
     ASSERT_TRUE(io->get_inode_bitmap().get_block_status(1));
     for (fsize ptr_n = 0; ptr_n < meta_inode_ptr_len; ptr_n++) {
@@ -185,5 +189,58 @@ TEST_F(MemoryIOTest, rename_inode_test) {
     file_name[0] = '\0';
     io->get_inode_file_name(addr, file_name);
     EXPECT_STREQ(file_name, file_name_ref2);
+}
+
+TEST_F(MemoryIOTest, add_data_test) {
+    fsize data_len = MB.block_size * 2 + 1;
+    std::vector<data> wdata(data_len);
+    std::memcpy(wdata.data(), (void*)memcpy, wdata.size());
+
+    EXPECT_EQ(io->add_data(invalid_inode, wdata.data(), data_len), fs_nullptr);
+
+    constexpr const char* file_name = "SampleFile";
+    address addr = io->alloc_inode(file_name);
+
+    EXPECT_EQ(io->add_data(addr, wdata.data(), 0), 0);
+
+    fsize n_written = io->add_data(addr, wdata.data(), data_len);
+    EXPECT_EQ(n_written, data_len);
+    EXPECT_EQ(inode->get(addr).file_len, data_len);
+
+    DataBlock data_block(*disk, MB);
+    std::vector<data> rdata(MB.block_size);
+    data_block.read(inode->get(addr).block_ptr[0], rdata.data(), 0,
+                    MB.block_size);
+    for (auto i = 0; i < MB.block_size; i++) {
+        EXPECT_EQ(wdata[i], rdata[i]);
+    }
+    data_block.read(inode->get(addr).block_ptr[1], rdata.data(), 0,
+                    MB.block_size);
+    for (auto i = 0; i < MB.block_size; i++) {
+        EXPECT_EQ(wdata[i + MB.block_size], rdata[i]);
+    }
+    data_block.read(inode->get(addr).block_ptr[2], rdata.data(), 0, 1);
+    EXPECT_EQ(wdata[data_len - 1], rdata[0]);
+
+    n_written = io->add_data(addr, wdata.data(), MB.block_size);
+    EXPECT_EQ(n_written, MB.block_size);
+    // HACK:
+    inode->get(MB.n_inode_blocks - 1).file_len;
+    // END OF HACK
+    EXPECT_EQ(inode->get(addr).file_len, data_len + MB.block_size);
+
+    // HACK:
+    data_block.read(inode->get(addr).block_ptr[1], rdata.data(), 0,
+                    MB.block_size);
+    // END OF HACK
+    data_block.read(inode->get(addr).block_ptr[2], rdata.data(), 1,
+                    MB.block_size - 1);
+    for (auto i = 0; i < MB.block_size - 1; i++) {
+        EXPECT_EQ(wdata[i], rdata[i]);
+    }
+    data_block.read(inode->get(addr).block_ptr[3], rdata.data(), 0, 1);
+    EXPECT_EQ(wdata[MB.block_size - 1], rdata[0]);
+
+    // TODO not finished
 }
 }
