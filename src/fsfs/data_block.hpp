@@ -10,7 +10,7 @@ namespace FSFS {
 class DataBlock {
    private:
     Disk& disk;
-    super_block MB;
+    const super_block& MB;
     std::vector<data> rwbuffer;
     address casched_block;
 
