@@ -205,6 +205,8 @@ TEST_F(MemoryIOTest, add_data_test) {
 
     fsize n_written = io->add_data(addr, wdata.data(), data_len);
     EXPECT_EQ(n_written, data_len);
+
+    inode->reinit();
     EXPECT_EQ(inode->get(addr).file_len, data_len);
 
     DataBlock data_block(*disk, MB);
@@ -224,15 +226,11 @@ TEST_F(MemoryIOTest, add_data_test) {
 
     n_written = io->add_data(addr, wdata.data(), MB.block_size);
     EXPECT_EQ(n_written, MB.block_size);
-    // HACK:
-    inode->get(MB.n_inode_blocks - 1).file_len;
-    // END OF HACK
+
+    inode->reinit();
     EXPECT_EQ(inode->get(addr).file_len, data_len + MB.block_size);
 
-    // HACK:
-    data_block.read(inode->get(addr).block_ptr[1], rdata.data(), 0,
-                    MB.block_size);
-    // END OF HACK
+    data_block.reinit();
     data_block.read(inode->get(addr).block_ptr[2], rdata.data(), 1,
                     MB.block_size - 1);
     for (auto i = 0; i < MB.block_size - 1; i++) {
@@ -240,7 +238,5 @@ TEST_F(MemoryIOTest, add_data_test) {
     }
     data_block.read(inode->get(addr).block_ptr[3], rdata.data(), 0, 1);
     EXPECT_EQ(wdata[MB.block_size - 1], rdata[0]);
-
-    // TODO not finished
 }
 }
