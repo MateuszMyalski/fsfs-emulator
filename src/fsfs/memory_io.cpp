@@ -45,6 +45,9 @@ fsize MemoryIO::add_data(address inode_n, const data* wdata, fsize length) {
         return 0;
     }
 
+    inode.reinit();
+    iinode.reinit();
+
     fsize n_written = 0;
     fsize n_ptr_used = bytes_to_blocks(inode.get(inode_n).file_len);
 
@@ -110,7 +113,21 @@ fsize MemoryIO::add_data(address inode_n, const data* wdata, fsize length) {
 }
 
 address MemoryIO::edit_data(address inode_n, const data* wdata, address offset,
-                            fsize length) {}
+                            fsize length) {
+    if (!inode_bitmap.get_block_status(inode_n)) {
+        return fs_nullptr;
+    }
+
+    if (length <= 0) {
+        return 0;
+    }
+
+    inode.reinit();
+    iinode.reinit();
+
+    if (offset >= inode.get(inode_n).file_len) {
+    }
+}
 
 address MemoryIO::alloc_inode(const char* file_name) {
     address inode_n = inode_bitmap.next_free(0);
@@ -141,6 +158,8 @@ address MemoryIO::dealloc_inode(address inode_n) {
         return fs_nullptr;
     }
 
+    inode.reinit();
+    iinode.reinit();
     inode.update(inode_n).type = block_status::Free;
     inode.commit();
 
@@ -159,6 +178,7 @@ address MemoryIO::rename_inode(address inode_n, const char* file_name) {
         return fs_nullptr;
     }
 
+    inode.reinit();
     strcpy(inode.update(inode_n).file_name, file_name);
     inode.commit();
 
@@ -170,6 +190,7 @@ fsize MemoryIO::get_inode_length(address inode_n) {
         return fs_nullptr;
     }
 
+    inode.reinit();
     return inode.get(inode_n).file_len;
 }
 
@@ -178,6 +199,7 @@ address MemoryIO::get_inode_file_name(address inode_n, char* file_name_buffer) {
         return fs_nullptr;
     }
 
+    inode.reinit();
     strcpy(file_name_buffer, inode.get(inode_n).file_name);
     return inode_n;
 }
@@ -185,6 +207,7 @@ address MemoryIO::get_inode_file_name(address inode_n, char* file_name_buffer) {
 void MemoryIO::scan_blocks() {
     inode_bitmap.init(MB.n_inode_blocks);
     data_bitmap.init(MB.n_data_blocks);
+    inode.reinit();
 
     for (fsize inode_n = 0; inode_n < MB.n_inode_blocks; inode_n++) {
         if (inode.get(inode_n).type != block_status::Used) {
@@ -197,6 +220,7 @@ void MemoryIO::scan_blocks() {
 }
 
 fsize MemoryIO::bytes_to_blocks(fsize length) {
+    length = std::max(0, length);
     fsize n_ptrs_used = length / MB.block_size;
     n_ptrs_used += length % MB.block_size ? 1 : 0;
     return n_ptrs_used;

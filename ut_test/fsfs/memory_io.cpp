@@ -118,6 +118,7 @@ class MemoryIOTest : public ::testing::Test {
 
 TEST_F(MemoryIOTest, bytes_to_block_test) {
     EXPECT_EQ(io->bytes_to_blocks(0), 0);
+    EXPECT_EQ(io->bytes_to_blocks(-1), 0);
     EXPECT_EQ(io->bytes_to_blocks(MB.block_size / 2), 1);
     EXPECT_EQ(io->bytes_to_blocks(MB.block_size), 1);
     EXPECT_EQ(io->bytes_to_blocks(MB.block_size + 1), 2);
