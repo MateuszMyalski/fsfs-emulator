@@ -172,4 +172,6 @@ void IndirectInode::commit() {
         throw std::runtime_error("Error while write operation.");
     }
 }
+
+address IndirectInode::get_n_ptrs_in_block() { return n_ptrs_in_block - 1; }
 }

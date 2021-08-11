@@ -46,6 +46,7 @@ class IndirectInode {
     address get_block_address(address base_addr, address ptr_n);
     address set_indirect_address(address data_n, address ptr_addr);
 
+    address get_n_ptrs_in_block();
     address alloc(address data_n);
     void commit();
     void reinit();
