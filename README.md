@@ -1,4 +1,4 @@
-# fsfs-emulator
+# WIP: fsfs-emulator
 
 ## DoD
 - **F**lash **S**imple **F**ile **S**ystem
