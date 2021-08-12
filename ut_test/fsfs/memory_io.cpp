@@ -11,14 +11,10 @@ namespace {
 class MemoryIOTest : public ::testing::Test {
    protected:
     constexpr static fsize block_size = 1024;
-    address invalid_inode = fs_nullptr;
-    fsize n_ptr_in_data_block = block_size / sizeof(address);
 
     MemoryIO* io;
     Disk* disk;
     super_block MB;
-    Inode* inode;
-    IndirectInode* iinode;
 
     std::vector<address> used_data_blocks;
     std::vector<address> used_inode_blocks;
@@ -32,22 +28,14 @@ class MemoryIOTest : public ::testing::Test {
         FileSystem::format(*disk);
         FileSystem::read_super_block(*disk, MB);
 
-        inode = new Inode(*disk, MB);
-        iinode = new IndirectInode(*disk, MB);
-
         io = new MemoryIO(*disk);
 
         set_dummy_blocks();
         io->init(MB);
         io->scan_blocks();
-
-        invalid_inode = MB.n_inode_blocks - 1;
     }
 
     void TearDown() override {
-        delete inode;
-        delete iinode;
-
         delete io;
 
         ASSERT_FALSE(disk->is_mounted());
@@ -57,19 +45,22 @@ class MemoryIOTest : public ::testing::Test {
     }
 
     void set_dummy_blocks() {
-        inode->alloc(0);
-        inode->commit();
+        Inode inode(*disk, MB);
+        IndirectInode iinode(*disk, MB);
+
+        inode.alloc(0);
+        inode.commit();
         used_inode_blocks.push_back(0);
 
-        inode->alloc(1);
-        inode->update(1).file_len = 4 * block_size + 1;
+        inode.alloc(1);
+        inode.update(1).file_len = 4 * block_size + 1;
         address ptr_offset = 0;
-        for (auto& block_ptr : inode->update(1).block_ptr) {
+        for (auto& block_ptr : inode.update(1).block_ptr) {
             block_ptr = ptr_offset;
             used_data_blocks.push_back(ptr_offset);
             ptr_offset += 1;
         }
-        inode->commit();
+        inode.commit();
         used_inode_blocks.push_back(1);
 
         fsize direct_ptr_size = meta_inode_ptr_len * block_size;
@@ -78,41 +69,41 @@ class MemoryIOTest : public ::testing::Test {
         fsize long_inode_len = direct_ptr_size;
 
         long_inode_len += 2 * (n_ptrs_indirect - 2) * block_size;
-        inode->alloc(long_inode_addr);
+        inode.alloc(long_inode_addr);
 
-        inode->update(long_inode_addr).file_len = long_inode_len;
-        for (auto& block_ptr : inode->update(long_inode_addr).block_ptr) {
+        inode.update(long_inode_addr).file_len = long_inode_len;
+        for (auto& block_ptr : inode.update(long_inode_addr).block_ptr) {
             block_ptr = ptr_offset;
             used_data_blocks.push_back(ptr_offset);
             ptr_offset += 1;
         }
-        inode->update(long_inode_addr).indirect_inode_ptr = 1024;
-        inode->commit();
+        inode.update(long_inode_addr).indirect_inode_ptr = 1024;
+        inode.commit();
         used_inode_blocks.push_back(long_inode_addr);
 
-        iinode->alloc(1024);
-        iinode->set_indirect_address(1024, 1028);
-        iinode->commit();
+        iinode.alloc(1024);
+        iinode.set_indirect_address(1024, 1028);
+        iinode.commit();
         used_data_blocks.push_back(1024);
-        iinode->alloc(1028);
-        iinode->commit();
+        iinode.alloc(1028);
+        iinode.commit();
         used_data_blocks.push_back(1028);
 
         fsize n_ptrs = (long_inode_len - direct_ptr_size) / MB.block_size;
         n_ptrs += (long_inode_len - direct_ptr_size) % MB.block_size ? 1 : 0;
         fsize nth_ptr = 0;
         for (auto i = 0; i < n_ptrs; i++) {
-            iinode->set_ptr(1024, i) = ptr_offset;
+            iinode.set_ptr(1024, i) = ptr_offset;
             used_data_blocks.push_back(ptr_offset);
             ptr_offset += 1;
             nth_ptr += 1;
 
             if (nth_ptr == (n_ptrs_indirect - 1)) {
-                iinode->commit();
+                iinode.commit();
                 nth_ptr = 0;
             }
         }
-        iinode->commit();
+        iinode.commit();
     }
 };
 
@@ -160,6 +151,7 @@ TEST_F(MemoryIOTest, alloc_inode_test) {
 }
 
 TEST_F(MemoryIOTest, dealloc_inode_test) {
+    address invalid_inode = MB.n_inode_blocks - 1;
     EXPECT_EQ(io->dealloc_inode(invalid_inode), fs_nullptr);
 
     ASSERT_TRUE(io->get_inode_bitmap().get_block_status(1));
@@ -191,6 +183,4 @@ TEST_F(MemoryIOTest, rename_inode_test) {
     io->get_inode_file_name(addr, file_name);
     EXPECT_STREQ(file_name, file_name_ref2);
 }
-
-TEST_F(MemoryIOTest, read_data_test) {}
 }

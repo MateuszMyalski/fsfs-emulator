@@ -38,6 +38,9 @@ void MemoryIO::set_data_blocks_status(address inode_n, bool allocated) {
 
 fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset,
                            fsize length) {
+    using std::max;
+    using std::min;
+
     if (!inode_bitmap.get_block_status(inode_n)) {
         return fs_nullptr;
     }
@@ -53,8 +56,9 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset,
     fsize n_ptr_used = bytes_to_blocks(inode.get(inode_n).file_len);
 
     fsize free_bytes = n_ptr_used * MB.block_size - inode.get(inode_n).file_len;
-    address last_ptr_n = std::max(0, n_ptr_used - 1);
+    address last_ptr_n = max(0, n_ptr_used - 1);
     address base_indirect = inode.get(inode_n).indirect_inode_ptr;
+    // Save data in free allocated block
     if (free_bytes > 0) {
         address block_addr = fs_nullptr;
         if (last_ptr_n < meta_inode_ptr_len) {
@@ -69,10 +73,11 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset,
         last_ptr_n++;
     }
 
-    fsize blocks_to_allocate =
-        bytes_to_blocks(std::max(0, length - free_bytes));
-    fsize n_direct_blocks = std::max(
-        std::min(meta_inode_ptr_len - last_ptr_n, blocks_to_allocate), 0);
+    fsize blocks_to_allocate = bytes_to_blocks(max(0, length - free_bytes));
+
+    // Save data in direct blocks
+    fsize n_direct_blocks =
+        max(min(meta_inode_ptr_len - last_ptr_n, blocks_to_allocate), 0);
     for (auto i = 0; i < n_direct_blocks; i++) {
         address new_block = data_bitmap.next_free(0);
         if (new_block == fs_nullptr) {
@@ -84,14 +89,18 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset,
         inode.update(inode_n).block_ptr[last_ptr_n] = new_block;
         data_bitmap.set_block(new_block, 1);
 
-        fsize to_write = std::min((length - n_written), MB.block_size);
+        fsize to_write = min((length - n_written), MB.block_size);
         n_written +=
             data_block.write(new_block, &wdata[n_written], 0, to_write);
 
         last_ptr_n += 1;
     }
+    blocks_to_allocate -= n_direct_blocks;
 
-    fsize n_indirect_blocks = blocks_to_allocate - n_direct_blocks;
+    // Save data in indirect blocks
+    fsize n_indirect_blocks = blocks_to_allocate / iinode.get_n_ptrs_in_block();
+    n_indirect_blocks +=
+        blocks_to_allocate % iinode.get_n_ptrs_in_block() ? 1 : 0;
     if ((base_indirect == fs_nullptr) && n_indirect_blocks > 0) {
         address new_indirect_block = data_bitmap.next_free(0);
         if (new_indirect_block == fs_nullptr) {
@@ -106,26 +115,45 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset,
     }
     inode.commit();
 
-    for (auto i = 0; i < n_indirect_blocks; i++) {
-        address new_block = data_bitmap.next_free(0);
-        if (new_block == fs_nullptr) {
-            inode.update(inode_n).file_len += n_written;
-            iinode.commit();
-            inode.commit();
-            return n_written;
+    for (auto nth_indirect = 0; nth_indirect < n_indirect_blocks;
+         nth_indirect++) {
+        fsize n_blocks_to_write =
+            min(blocks_to_allocate, iinode.get_n_ptrs_in_block());
+        for (auto i = 0; i < n_blocks_to_write; i++) {
+            address new_block = data_bitmap.next_free(0);
+            if (new_block == fs_nullptr) {
+                inode.update(inode_n).file_len += n_written;
+                iinode.commit();
+                inode.commit();
+                return n_written;
+            }
+
+            iinode.set_ptr(base_indirect, last_ptr_n - meta_inode_ptr_len) =
+                new_block;
+            data_bitmap.set_block(new_block, 1);
+
+            fsize to_write = min((length - n_written), MB.block_size);
+            n_written +=
+                data_block.write(new_block, &wdata[n_written], 0, to_write);
+
+            last_ptr_n += 1;
         }
-
-        iinode.set_ptr(base_indirect, last_ptr_n - meta_inode_ptr_len) =
-            new_block;
-        data_bitmap.set_block(new_block, 1);
-
-        fsize to_write = std::min((length - n_written), MB.block_size);
-        n_written +=
-            data_block.write(new_block, &wdata[n_written], 0, to_write);
-
-        last_ptr_n += 1;
+        blocks_to_allocate -= n_blocks_to_write;
+        if (blocks_to_allocate > 0) {
+            address new_block = data_bitmap.next_free(0);
+            if (new_block == fs_nullptr) {
+                inode.update(inode_n).file_len += n_written;
+                inode.commit();
+                iinode.commit();
+                return n_written;
+            }
+            address block_n = iinode.get_block_address(
+                base_indirect, last_ptr_n - meta_inode_ptr_len - 1);
+            iinode.set_indirect_address(block_n, new_block);
+            data_bitmap.set_block(new_block, 1);
+        }
+        iinode.commit();
     }
-    iinode.commit();
 
     inode.update(inode_n).file_len += n_written;
     inode.commit();
