@@ -21,6 +21,15 @@ class MemoryIO {
 
     void set_data_blocks_status(address inode_n, bool allocated);
 
+    decltype(auto) get_abs_addr(address inode_n, fsize ptr_n);
+    decltype(auto) set_abs_addr(address inode_n, fsize ptr_n);
+
+    address expand_indirect(address data_n);
+    address expand_inode(address inode_n);
+    address assign_data_block(address inode_n, fsize ptr_n);
+
+    fsize store_data(address data_n, const data* wdata, fsize length);
+
     template <typename Self>
     static decltype(auto) get_inode_bitmap_common(Self* self) {
         return (self->inode_bitmap);
