@@ -214,46 +214,4 @@ TEST_F(MemoryIOWriteDataTest, nested_indirect_blocks) {
 }
 
 TEST_F(MemoryIOWriteDataTest, offset_write) {}
-
-// TEST_F(MemoryIOWriteDataTest, ----) {
-//     inode->reinit();
-//     EXPECT_EQ(inode->get(addr).file_len, data_len);
-
-//     BufferType rdata(MB.block_size);
-//     data_block.read(inode->get(addr).block_ptr[0], rdata.data(), 0,
-//                     MB.block_size);
-//     for (auto i = 0; i < MB.block_size; i++) {
-//         EXPECT_EQ(wdata[i], rdata[i]);
-//     }
-//     data_block.read(inode->get(addr).block_ptr[1], rdata.data(), 0,
-//                     MB.block_size);
-//     for (auto i = 0; i < MB.block_size; i++) {
-//         EXPECT_EQ(wdata[i + MB.block_size], rdata[i]);
-//     }
-//     data_block.read(inode->get(addr).block_ptr[2], rdata.data(), 0, 1);
-//     EXPECT_EQ(wdata[data_len - 1], rdata[0]);
-
-//     n_written = io->write_data(addr, wdata.data(), 0, MB.block_size);
-//     EXPECT_EQ(n_written, MB.block_size);
-
-//     inode->reinit();
-//     EXPECT_EQ(inode->get(addr).file_len, data_len + MB.block_size);
-
-//     data_block.reinit();
-//     data_block.read(inode->get(addr).block_ptr[2], rdata.data(), 1,
-//                     MB.block_size - 1);
-//     for (auto i = 0; i < MB.block_size - 1; i++) {
-//         EXPECT_EQ(wdata[i], rdata[i]);
-//     }
-//     data_block.read(inode->get(addr).block_ptr[3], rdata.data(), 0, 1);
-//     EXPECT_EQ(wdata[MB.block_size - 1], rdata[0]);
-
-//     n_written = io->write_data(addr, wdata.data(), 0, 2 * MB.block_size);
-//     n_written += io->write_data(addr, wdata.data(), 0, 2 * MB.block_size);
-//     EXPECT_EQ(n_written, 4 * MB.block_size);
-
-//     data_block.reinit();
-//     data_block.read(inode->get(addr).block_ptr[2], rdata.data(), 0,
-//                     MB.block_size - 1);
-// }
 }
