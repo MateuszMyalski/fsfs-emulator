@@ -14,28 +14,22 @@ void MemoryIO::init(const super_block& MB) {
     data_block.reinit();
 }
 
-decltype(auto) MemoryIO::get_abs_addr(address inode_n, fsize ptr_n) {
-    auto abs_addr = ptr_n;
-
-    if (ptr_n < meta_inode_ptr_len) {
-        return inode.get(inode_n).block_ptr[abs_addr];
+decltype(auto) MemoryIO::get_abs_addr(address inode_n, fsize abs_ptr_n) {
+    if (abs_ptr_n < meta_inode_ptr_len) {
+        return inode.get(inode_n).block_ptr[abs_ptr_n];
     }
 
-    abs_addr -= meta_inode_ptr_len;
-    auto base_indirect_addr = inode.get(inode_n).indirect_inode_ptr;
-    return iinode.get_ptr(base_indirect_addr, abs_addr);
+    abs_ptr_n -= meta_inode_ptr_len;
+    return iinode.get_ptr(inode.get(inode_n).indirect_inode_ptr, abs_ptr_n);
 }
 
-decltype(auto) MemoryIO::set_abs_addr(address inode_n, fsize ptr_n) {
-    auto abs_addr = ptr_n;
-
-    if (ptr_n < meta_inode_ptr_len) {
-        return inode.update(inode_n).block_ptr[abs_addr];
+decltype(auto) MemoryIO::set_abs_addr(address inode_n, fsize abs_ptr_n) {
+    if (abs_ptr_n < meta_inode_ptr_len) {
+        return inode.update(inode_n).block_ptr[abs_ptr_n];
     }
 
-    auto base_indirect_addr = inode.get(inode_n).indirect_inode_ptr;
-    abs_addr -= meta_inode_ptr_len;
-    return iinode.set_ptr(base_indirect_addr, abs_addr);
+    abs_ptr_n -= meta_inode_ptr_len;
+    return iinode.set_ptr(inode.get(inode_n).indirect_inode_ptr, abs_ptr_n);
 }
 
 void MemoryIO::set_data_blocks_status(address inode_n, bool status) {
