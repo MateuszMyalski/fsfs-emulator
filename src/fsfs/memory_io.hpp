@@ -26,7 +26,7 @@ class MemoryIO {
 
     address expand_indirect(address data_n);
     address expand_inode(address inode_n);
-    address assign_data_block(address inode_n, fsize ptr_n);
+    address assign_data_block(address inode_n, fsize abs_ptr_n);
 
     fsize store_data(address data_n, const data* wdata, fsize length);
 

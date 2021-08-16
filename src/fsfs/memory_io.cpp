@@ -73,13 +73,13 @@ address MemoryIO::expand_indirect(address data_n) {
     return new_block_addr;
 }
 
-address MemoryIO::assign_data_block(address inode_n, fsize ptr_n) {
+address MemoryIO::assign_data_block(address inode_n, fsize abs_ptr_n) {
     auto new_block_addr = data_bitmap.next_free(0);
     if (new_block_addr == fs_nullptr) {
         return fs_nullptr;
     }
 
-    set_abs_addr(inode_n, ptr_n) = new_block_addr;
+    set_abs_addr(inode_n, abs_ptr_n) = new_block_addr;
     data_bitmap.set_block(new_block_addr, 1);
     return new_block_addr;
 }
@@ -106,13 +106,12 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
 
     fsize n_written = 0;
     fsize n_ptr_used = bytes_to_blocks(inode.get(inode_n).file_len);
-    fsize free_bytes = n_ptr_used * MB.block_size - inode.get(inode_n).file_len;
     address last_ptr_n = max(0, n_ptr_used - 1);
     address base_indirect = inode.get(inode_n).indirect_inode_ptr;
 
+    fsize free_bytes = n_ptr_used * MB.block_size - inode.get(inode_n).file_len;
     if (free_bytes > 0) {
-        address block_addr = fs_nullptr;
-        block_addr = get_abs_addr(inode_n, last_ptr_n);
+        address block_addr = get_abs_addr(inode_n, last_ptr_n);
         n_written += data_block.write(block_addr, wdata, -free_bytes, free_bytes);
         last_ptr_n++;
     }
@@ -135,7 +134,7 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
 
     fsize n_indirect_blocks = blocks_to_allocate / iinode.get_n_ptrs_in_block();
     n_indirect_blocks += blocks_to_allocate % iinode.get_n_ptrs_in_block() ? 1 : 0;
-    if ((base_indirect == fs_nullptr) && n_indirect_blocks > 0) {
+    if ((base_indirect == fs_nullptr) && (n_indirect_blocks > 0)) {
         address indirect_block = expand_inode(inode_n);
         if (indirect_block == fs_nullptr) {
             inode.update(inode_n).file_len += n_written;
@@ -163,8 +162,8 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
         blocks_to_allocate -= n_blocks_to_write;
 
         if (blocks_to_allocate > 0) {
-            address block_n = iinode.get_block_address(base_indirect, last_ptr_n - meta_inode_ptr_len - 1);
-            address indirect_block = expand_indirect(block_n);
+            address data_n = iinode.get_block_address(base_indirect, last_ptr_n - meta_inode_ptr_len - 1);
+            address indirect_block = expand_indirect(data_n);
             if (indirect_block == fs_nullptr) {
                 inode.update(inode_n).file_len += n_written;
                 inode.commit();
