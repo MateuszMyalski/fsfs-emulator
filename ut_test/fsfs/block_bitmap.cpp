@@ -10,8 +10,7 @@ class BlockBitmapTest : public ::testing::Test {
    protected:
     constexpr static fsize block_size = 1024;
     constexpr static fsize data_n_blocks = 2048;
-    constexpr static auto bitmap_row_length =
-        std::numeric_limits<bitmap_t>::digits;
+    constexpr static auto bitmap_row_length = std::numeric_limits<bitmap_t>::digits;
 
     BlockBitmap* bitmap;
 
@@ -26,8 +25,7 @@ TEST_F(BlockBitmapTest, get_data_block_throw) {
 
     bitmap->init(data_n_blocks);
 
-    EXPECT_THROW(bitmap->get_block_status(data_n_blocks),
-                 std::invalid_argument);
+    EXPECT_THROW(bitmap->get_block_status(data_n_blocks), std::invalid_argument);
     EXPECT_THROW(bitmap->get_block_status(-1), std::invalid_argument);
 
     bitmap->get_block_status(data_n_blocks - 1);

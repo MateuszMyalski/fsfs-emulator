@@ -39,46 +39,27 @@ class DataBlockTest : public ::testing::Test {
 
 TEST_F(DataBlockTest, write_throw_test) {
     data dummy_data = 0x00;
-    EXPECT_THROW(data_block->write(MB.n_data_blocks, &dummy_data, 0, 0),
-                 std::invalid_argument);
-    EXPECT_THROW(data_block->write(-1, &dummy_data, 0, 0),
-                 std::invalid_argument);
+    EXPECT_THROW(data_block->write(MB.n_data_blocks, &dummy_data, 0, 0), std::invalid_argument);
+    EXPECT_THROW(data_block->write(-1, &dummy_data, 0, 0), std::invalid_argument);
 
-    EXPECT_THROW(data_block->write(0, &dummy_data, MB.block_size, 0),
-                 std::invalid_argument);
-    EXPECT_THROW(data_block->write(0, &dummy_data, -MB.block_size, 0),
-                 std::invalid_argument);
+    EXPECT_THROW(data_block->write(0, &dummy_data, MB.block_size, 0), std::invalid_argument);
+    EXPECT_THROW(data_block->write(0, &dummy_data, -MB.block_size, 0), std::invalid_argument);
 
-    EXPECT_THROW(data_block->write(0, &dummy_data, 0, -1),
-                 std::invalid_argument);
-    EXPECT_THROW(data_block->write(0, &dummy_data, 0, MB.block_size + 1),
-                 std::invalid_argument);
-    EXPECT_THROW(data_block->write(0, &dummy_data, -2, 3),
-                 std::invalid_argument);
-    EXPECT_THROW(data_block->write(0, &dummy_data, MB.block_size - 1, 2),
-                 std::invalid_argument);
+    EXPECT_THROW(data_block->write(0, &dummy_data, 0, -1), std::invalid_argument);
 }
 
 TEST_F(DataBlockTest, read_throw_test) {
     data dummy_data = 0x00;
-    EXPECT_THROW(data_block->read(MB.n_data_blocks, &dummy_data, 0, 0),
-                 std::invalid_argument);
-    EXPECT_THROW(data_block->read(-1, &dummy_data, 0, 0),
-                 std::invalid_argument);
+    EXPECT_THROW(data_block->read(MB.n_data_blocks, &dummy_data, 0, 0), std::invalid_argument);
+    EXPECT_THROW(data_block->read(-1, &dummy_data, 0, 0), std::invalid_argument);
 
-    EXPECT_THROW(data_block->read(0, &dummy_data, MB.block_size, 0),
-                 std::invalid_argument);
-    EXPECT_THROW(data_block->read(0, &dummy_data, -MB.block_size, 0),
-                 std::invalid_argument);
+    EXPECT_THROW(data_block->read(0, &dummy_data, MB.block_size, 0), std::invalid_argument);
+    EXPECT_THROW(data_block->read(0, &dummy_data, -MB.block_size, 0), std::invalid_argument);
 
-    EXPECT_THROW(data_block->read(0, &dummy_data, 0, -1),
-                 std::invalid_argument);
-    EXPECT_THROW(data_block->read(0, &dummy_data, 0, MB.block_size + 1),
-                 std::invalid_argument);
-    EXPECT_THROW(data_block->read(0, &dummy_data, -2, 3),
-                 std::invalid_argument);
-    EXPECT_THROW(data_block->read(0, &dummy_data, MB.block_size - 1, 2),
-                 std::invalid_argument);
+    EXPECT_THROW(data_block->read(0, &dummy_data, 0, -1), std::invalid_argument);
+    EXPECT_THROW(data_block->read(0, &dummy_data, 0, MB.block_size + 1), std::invalid_argument);
+    EXPECT_THROW(data_block->read(0, &dummy_data, -2, 3), std::invalid_argument);
+    EXPECT_THROW(data_block->read(0, &dummy_data, MB.block_size - 1, 2), std::invalid_argument);
 }
 
 TEST_F(DataBlockTest, write_test) {
@@ -95,8 +76,7 @@ TEST_F(DataBlockTest, write_test) {
         EXPECT_EQ(wdata[i], rdata[i]);
     }
 
-    n_written =
-        data_block->write(0, wdata.data(), MB.block_size / 2, wdata.size());
+    n_written = data_block->write(0, wdata.data(), MB.block_size / 2, wdata.size());
     EXPECT_EQ(n_written, wdata.size());
 
     disk->read(data_block_to_addr(0), rdata.data(), MB.block_size);

@@ -123,8 +123,7 @@ TEST_F(MemoryIOTest, scan_blocks_test) {
         EXPECT_TRUE(io->get_inode_bitmap().get_block_status(inode_n));
     }
     for (auto inode_n = 0; inode_n < MB.n_inode_blocks; inode_n++) {
-        if (std::find(used_inode_blocks.begin(), used_inode_blocks.end(),
-                      inode_n) != used_inode_blocks.end()) {
+        if (std::find(used_inode_blocks.begin(), used_inode_blocks.end(), inode_n) != used_inode_blocks.end()) {
             continue;
         }
         EXPECT_FALSE(io->get_inode_bitmap().get_block_status(inode_n));
@@ -134,8 +133,7 @@ TEST_F(MemoryIOTest, scan_blocks_test) {
         EXPECT_TRUE(io->get_data_bitmap().get_block_status(data_n));
     }
     for (auto data_n = 0; data_n < MB.n_inode_blocks; data_n++) {
-        if (std::find(used_data_blocks.begin(), used_data_blocks.end(),
-                      data_n) != used_data_blocks.end()) {
+        if (std::find(used_data_blocks.begin(), used_data_blocks.end(), data_n) != used_data_blocks.end()) {
             continue;
         }
         EXPECT_FALSE(io->get_inode_bitmap().get_block_status(data_n));
@@ -156,16 +154,14 @@ TEST_F(MemoryIOTest, dealloc_inode_test) {
 
     ASSERT_TRUE(io->get_inode_bitmap().get_block_status(1));
     for (fsize ptr_n = 0; ptr_n < meta_inode_ptr_len; ptr_n++) {
-        ASSERT_TRUE(
-            io->get_data_bitmap().get_block_status(used_data_blocks.at(ptr_n)));
+        ASSERT_TRUE(io->get_data_bitmap().get_block_status(used_data_blocks.at(ptr_n)));
     }
 
     EXPECT_EQ(io->dealloc_inode(1), 1);
 
     EXPECT_FALSE(io->get_inode_bitmap().get_block_status(1));
     for (fsize ptr_n = 0; ptr_n < meta_inode_ptr_len; ptr_n++) {
-        EXPECT_FALSE(
-            io->get_data_bitmap().get_block_status(used_data_blocks.at(ptr_n)));
+        EXPECT_FALSE(io->get_data_bitmap().get_block_status(used_data_blocks.at(ptr_n)));
     }
 }
 

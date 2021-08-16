@@ -59,8 +59,7 @@ class MemoryIOWriteDataTest : public ::testing::Test {
         }
     }
 
-    bool check_block(address block_n, const BufferType& ref_data,
-                     BufferType::const_iterator& ref_data_it) {
+    bool check_block(address block_n, const BufferType& ref_data, BufferType::const_iterator& ref_data_it) {
         DataBlock data_block(*disk, MB);
         BufferType rdata(MB.block_size);
         data_block.read(block_n, rdata.data(), 0, MB.block_size);
@@ -148,8 +147,7 @@ TEST_F(MemoryIOWriteDataTest, single_indirect_blocks) {
 
     auto wdata_it = wdata.cbegin();
     for (auto i = 0; i < meta_inode_ptr_len; i++) {
-        EXPECT_TRUE(
-            check_block(inode->get(addr).block_ptr[i], wdata, wdata_it));
+        EXPECT_TRUE(check_block(inode->get(addr).block_ptr[i], wdata, wdata_it));
     }
     EXPECT_TRUE(check_block(indirect_n0, wdata, wdata_it));
 }
@@ -182,8 +180,7 @@ TEST_F(MemoryIOWriteDataTest, append_data) {
 }
 
 TEST_F(MemoryIOWriteDataTest, nested_indirect_blocks) {
-    fsize data_len = MB.block_size * meta_inode_ptr_len +
-                     2 * MB.block_size * iinode->get_n_ptrs_in_block();
+    fsize data_len = MB.block_size * meta_inode_ptr_len + 2 * MB.block_size * iinode->get_n_ptrs_in_block();
     BufferType wdata(data_len);
     fill_dummy(wdata);
 
@@ -201,8 +198,7 @@ TEST_F(MemoryIOWriteDataTest, nested_indirect_blocks) {
     auto wdata_it = wdata.cbegin();
 
     for (auto i = 0; i < meta_inode_ptr_len; i++) {
-        EXPECT_TRUE(
-            check_block(inode->get(addr).block_ptr[i], wdata, wdata_it));
+        EXPECT_TRUE(check_block(inode->get(addr).block_ptr[i], wdata, wdata_it));
     }
     address base_indirect = inode->get(addr).indirect_inode_ptr;
     ASSERT_NE(base_indirect, fs_nullptr);

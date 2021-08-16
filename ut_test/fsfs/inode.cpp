@@ -62,45 +62,38 @@ class InodeTest : public ::testing::Test {
 TEST_F(InodeTest, get_inode_throw) {
     EXPECT_THROW(inode->get(-1), std::invalid_argument);
     EXPECT_THROW(inode->get(MB.n_inode_blocks), std::invalid_argument);
-    EXPECT_THROW(inode->get(MB.n_inode_blocks + 1),
-                 std::invalid_argument);
+    EXPECT_THROW(inode->get(MB.n_inode_blocks + 1), std::invalid_argument);
 }
 
 TEST_F(InodeTest, update_inode_throw) {
     EXPECT_THROW(inode->update(-1), std::invalid_argument);
     EXPECT_THROW(inode->update(MB.n_inode_blocks), std::invalid_argument);
-    EXPECT_THROW(inode->update(MB.n_inode_blocks + 1),
-                 std::invalid_argument);
+    EXPECT_THROW(inode->update(MB.n_inode_blocks + 1), std::invalid_argument);
 }
 
 TEST_F(InodeTest, alloc_inode_throw) {
     EXPECT_THROW(inode->alloc(-1), std::invalid_argument);
     EXPECT_THROW(inode->alloc(MB.n_inode_blocks), std::invalid_argument);
-    EXPECT_THROW(inode->alloc(MB.n_inode_blocks + 1),
-                 std::invalid_argument);
+    EXPECT_THROW(inode->alloc(MB.n_inode_blocks + 1), std::invalid_argument);
 }
 
 TEST_F(InodeTest, get_inode_test) {
     address test_inode1 = 0;
     address test_inode2 = block_size / meta_fragm_size;
 
-    disk->write(fs_offset_inode_block, reinterpret_cast<data*>(&ref_inode1),
-                meta_fragm_size);
-    disk->write(fs_offset_inode_block + 1, reinterpret_cast<data*>(&ref_inode2),
-                meta_fragm_size);
+    disk->write(fs_offset_inode_block, reinterpret_cast<data*>(&ref_inode1), meta_fragm_size);
+    disk->write(fs_offset_inode_block + 1, reinterpret_cast<data*>(&ref_inode2), meta_fragm_size);
 
     EXPECT_EQ(ref_inode1.type, inode->get(test_inode1).type);
     EXPECT_EQ(ref_inode1.file_len, inode->get(test_inode1).file_len);
     for (auto i = 0; i < meta_inode_ptr_len; i++) {
-        EXPECT_EQ(ref_inode1.block_ptr[i],
-                  inode->get(test_inode1).block_ptr[i]);
+        EXPECT_EQ(ref_inode1.block_ptr[i], inode->get(test_inode1).block_ptr[i]);
     }
 
     EXPECT_EQ(ref_inode2.type, inode->get(test_inode2).type);
     EXPECT_EQ(ref_inode2.file_len, inode->get(test_inode2).file_len);
     for (auto i = 0; i < meta_inode_ptr_len; i++) {
-        EXPECT_EQ(ref_inode2.block_ptr[i],
-                  inode->get(test_inode2).block_ptr[i]);
+        EXPECT_EQ(ref_inode2.block_ptr[i], inode->get(test_inode2).block_ptr[i]);
     }
 }
 
@@ -110,24 +103,20 @@ TEST_F(InodeTest, update_inode_test) {
 
     inode->alloc(test_inode1);
     inode->update(test_inode1).file_len = ref_inode1.file_len;
-    inode->update(test_inode1).indirect_inode_ptr =
-        ref_inode1.indirect_inode_ptr;
+    inode->update(test_inode1).indirect_inode_ptr = ref_inode1.indirect_inode_ptr;
     for (auto i = 0; i < meta_inode_ptr_len; i++) {
         inode->update(test_inode1).block_ptr[i] = ref_inode1.block_ptr[i];
     }
-    std::strcpy(inode->update(test_inode1).file_name,
-                ref_inode1.file_name);
+    std::strcpy(inode->update(test_inode1).file_name, ref_inode1.file_name);
     inode->commit();
 
     inode->alloc(test_inode2);
     inode->update(test_inode2).file_len = ref_inode2.file_len;
-    inode->update(test_inode2).indirect_inode_ptr =
-        ref_inode2.indirect_inode_ptr;
+    inode->update(test_inode2).indirect_inode_ptr = ref_inode2.indirect_inode_ptr;
     for (auto i = 0; i < meta_inode_ptr_len; i++) {
         inode->update(test_inode2).block_ptr[i] = ref_inode2.block_ptr[i];
     }
-    std::strcpy(inode->update(test_inode2).file_name,
-                ref_inode2.file_name);
+    std::strcpy(inode->update(test_inode2).file_name, ref_inode2.file_name);
     inode->commit();
 
     std::vector<data> rdata(meta_fragm_size);

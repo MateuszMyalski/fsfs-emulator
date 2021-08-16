@@ -39,17 +39,17 @@ fsize DataBlock::write(address block_n, const data* wdata, fsize offset, fsize l
         throw std::invalid_argument("Offest cannot be equal or greater than block size.");
     }
 
-    fsize real_offset = offset >= 0 ? offset : MB.block_size + offset;
-    fsize writtable_space = MB.block_size - real_offset;
-    if (length > writtable_space || length < 0) {
-        throw std::invalid_argument(
-            "Length cannot be greater than writtable space and lower than "
-            "zero.");
+    if (length < 0) {
+        throw std::invalid_argument("Length lower than zero.");
     }
 
     if (length == 0) {
         return length;
     }
+
+    fsize real_offset = offset >= 0 ? offset : MB.block_size + offset;
+    fsize writtable_space = MB.block_size - real_offset;
+    length = std::min(length, writtable_space);
 
     read_block(block_n);
     std::memcpy(rwbuffer.data() + real_offset, wdata, length);

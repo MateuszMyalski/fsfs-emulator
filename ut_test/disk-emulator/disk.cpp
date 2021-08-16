@@ -45,8 +45,7 @@ class DiskTest : public ::testing::Test {
         created_files.push_back(file_name);
     }
 
-    void fill_test_file(std::string_view file_name, int32_t offset, data* data,
-                        int32_t len) {
+    void fill_test_file(std::string_view file_name, int32_t offset, data* data, int32_t len) {
         std::fstream file(file_name.data(), std::ios::out | std::ios::binary);
         file.seekp(offset);
         file.write(reinterpret_cast<char*>(data), len);
@@ -97,9 +96,7 @@ TEST_F(DiskTest, disk_size) {
     ASSERT_EQ(test_disk->get_disk_size(), n_blocks);
 }
 
-TEST_F(DiskTest, create) {
-    ASSERT_EQ(block_size * n_blocks, get_file_size(disk_name));
-}
+TEST_F(DiskTest, create) { ASSERT_EQ(block_size * n_blocks, get_file_size(disk_name)); }
 
 TEST_F(DiskTest, open) {
     test_disk->open(disk_name);
@@ -113,8 +110,7 @@ TEST_F(DiskTest, open) {
 TEST_F(DiskTest, open_invalid_size) {
     recreate_test_file("tmp_invalid_size_disk.img", block_size + 1);
 
-    ASSERT_THROW(test_disk->open("tmp_invalid_size_disk.img"),
-                 std::runtime_error);
+    ASSERT_THROW(test_disk->open("tmp_invalid_size_disk.img"), std::runtime_error);
 }
 
 TEST_F(DiskTest, write) {

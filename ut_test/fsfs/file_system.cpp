@@ -51,8 +51,7 @@ TEST_F(FileSystemTest, format) {
 
     disk->mount();
     meta_block r_data[block_size / meta_fragm_size] = {};
-    auto status =
-        disk->read(fs_offset_super_block, r_data->raw_data, block_size);
+    auto status = disk->read(fs_offset_super_block, r_data->raw_data, block_size);
 
     EXPECT_EQ(status, block_size);
     EXPECT_EQ(r_data[0].MB.magic_number[0], meta_magic_num_lut[0]);
@@ -66,8 +65,7 @@ TEST_F(FileSystemTest, format) {
     EXPECT_EQ(r_data[0].MB.fs_ver_minor, fs_system_minor);
 
     for (auto i = 0; i < n_inode_blocks; i++) {
-        status =
-            disk->read(fs_offset_inode_block + i, r_data->raw_data, block_size);
+        status = disk->read(fs_offset_inode_block + i, r_data->raw_data, block_size);
         EXPECT_EQ(status, block_size);
 
         for (auto j = 0; j < block_size / meta_fragm_size; j++) {
