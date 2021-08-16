@@ -14,27 +14,6 @@ void MemoryIO::init(const super_block& MB) {
     data_block.reinit();
 }
 
-void MemoryIO::set_data_blocks_status(address inode_n, bool allocated) {
-    fsize n_ptrs_used = bytes_to_blocks(inode.get(inode_n).file_len);
-    fsize n_direct_ptrs = std::min(n_ptrs_used, meta_inode_ptr_len);
-    for (auto i = 0; i < n_direct_ptrs; i++) {
-        data_bitmap.set_block(inode.get(inode_n).block_ptr[i], allocated);
-        n_ptrs_used--;
-    }
-
-    address indirect_address = inode.get(inode_n).indirect_inode_ptr;
-
-    address nth_ptr_indirect = 0;
-    fsize n_ptrs_indirect = MB.block_size / sizeof(address) - 2;
-    for (auto i = 0; i < n_ptrs_used; i++) {
-        nth_ptr_indirect++;
-        data_bitmap.set_block(iinode.get_ptr(indirect_address, i), allocated);
-        if (nth_ptr_indirect % n_ptrs_indirect == 0) {
-            data_bitmap.set_block(iinode.get_block_address(indirect_address, i), allocated);
-        }
-    }
-}
-
 decltype(auto) MemoryIO::get_abs_addr(address inode_n, fsize ptr_n) {
     auto abs_addr = ptr_n;
 
@@ -57,6 +36,24 @@ decltype(auto) MemoryIO::set_abs_addr(address inode_n, fsize ptr_n) {
     auto base_indirect_addr = inode.get(inode_n).indirect_inode_ptr;
     abs_addr -= meta_inode_ptr_len;
     return iinode.set_ptr(base_indirect_addr, abs_addr);
+}
+
+void MemoryIO::set_data_blocks_status(address inode_n, bool status) {
+    fsize n_ptrs_used = bytes_to_blocks(inode.get(inode_n).file_len);
+
+    fsize n_direct_ptrs = std::min(n_ptrs_used, meta_inode_ptr_len);
+    for (auto i = 0; i < n_direct_ptrs; i++) {
+        data_bitmap.set_block(inode.get(inode_n).block_ptr[i], status);
+        n_ptrs_used--;
+    }
+
+    address indirect_address = inode.get(inode_n).indirect_inode_ptr;
+    for (auto i = 0; i < n_ptrs_used; i++) {
+        data_bitmap.set_block(iinode.get_ptr(indirect_address, i), status);
+        if (i % iinode.get_n_ptrs_in_block() == 0) {
+            data_bitmap.set_block(iinode.get_block_address(indirect_address, i), status);
+        }
+    }
 }
 
 address MemoryIO::expand_inode(address inode_n) {
@@ -122,7 +119,6 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
     if (free_bytes > 0) {
         address block_addr = fs_nullptr;
         block_addr = get_abs_addr(inode_n, last_ptr_n);
-
         n_written += data_block.write(block_addr, wdata, -free_bytes, free_bytes);
         last_ptr_n++;
     }
