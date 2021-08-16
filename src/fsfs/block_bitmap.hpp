@@ -12,8 +12,7 @@ class BlockBitmap {
     address n_blocks;
     std::vector<bitmap_t> bitmap;
 
-    constexpr static auto bitmap_row_length =
-        std::numeric_limits<bitmap_t>::digits;
+    constexpr static auto bitmap_row_length = std::numeric_limits<bitmap_t>::digits;
 
     inline address calc_pos(address block_n) const;
     const bitmap_t& get_map_row(address block_n) const;

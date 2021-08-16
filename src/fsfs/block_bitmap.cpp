@@ -24,8 +24,7 @@ const bitmap_t& BlockBitmap::get_map_row(address block_n) const {
 
 void BlockBitmap::init(address n_blocks) {
     if (n_blocks <= 0) {
-        throw std::invalid_argument(
-            "Size number cannot be equal or lower than 0.");
+        throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
 
     this->n_blocks = n_blocks;
@@ -41,8 +40,7 @@ void BlockBitmap::init(address n_blocks) {
 
 void BlockBitmap::set_block(address block_n, bool status) {
     if (block_n < 0) {
-        throw std::invalid_argument(
-            "Size number cannot be equal or lower than 0.");
+        throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
 
     if (n_blocks < 0) {
@@ -63,8 +61,7 @@ void BlockBitmap::set_block(address block_n, bool status) {
 
 bool BlockBitmap::get_block_status(address block_n) const {
     if (block_n < 0) {
-        throw std::invalid_argument(
-            "Size number cannot be equal or lower than 0.");
+        throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
 
     if (n_blocks < 0) {
@@ -81,13 +78,11 @@ bool BlockBitmap::get_block_status(address block_n) const {
 
 address BlockBitmap::next_free(address block_offset) const {
     if (block_offset < 0) {
-        throw std::invalid_argument(
-            "Size number cannot be equal or lower than 0.");
+        throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
 
     if (block_offset >= n_blocks) {
-        throw std::runtime_error(
-            "Block offset is greater than block map size.");
+        throw std::runtime_error("Block offset is greater than block map size.");
     }
 
     size_t row = block_offset / bitmap_row_length;

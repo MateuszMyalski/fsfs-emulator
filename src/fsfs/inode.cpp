@@ -14,8 +14,7 @@ void Inode::reinit() {
 }
 
 address Inode::read_inode(address inode_n) {
-    if (((inode_n < casch_info.high_block_n) &&
-         (inode_n >= casch_info.low_block_n)) &&
+    if (((inode_n < casch_info.high_block_n) && (inode_n >= casch_info.low_block_n)) &&
         casch_info.nth_block != fs_nullptr) {
         return inode_n;
     }
@@ -77,8 +76,7 @@ void Inode::commit() {
         return;
     }
 
-    fsize n_write =
-        disk.write(casch_info.nth_block, rwbuffer.data(), MB.block_size);
+    fsize n_write = disk.write(casch_info.nth_block, rwbuffer.data(), MB.block_size);
     if (n_write != MB.block_size) {
         throw std::runtime_error("Error while write operation.");
     }

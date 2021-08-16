@@ -30,15 +30,13 @@ address DataBlock::read_block(address block_n) {
     return block_n;
 }
 
-fsize DataBlock::write(address block_n, const data* wdata, fsize offset,
-                       fsize length) {
+fsize DataBlock::write(address block_n, const data* wdata, fsize offset, fsize length) {
     if (block_n >= MB.n_data_blocks || block_n < 0) {
         throw std::invalid_argument("Invalid data block number.");
     }
 
     if (std::abs(offset) >= MB.block_size) {
-        throw std::invalid_argument(
-            "Offest cannot be equal or greater than block size.");
+        throw std::invalid_argument("Offest cannot be equal or greater than block size.");
     }
 
     fsize real_offset = offset >= 0 ? offset : MB.block_size + offset;
@@ -63,15 +61,13 @@ fsize DataBlock::write(address block_n, const data* wdata, fsize offset,
     return length;
 }
 
-fsize DataBlock::read(address block_n, data* rdata, fsize offset,
-                      fsize length) {
+fsize DataBlock::read(address block_n, data* rdata, fsize offset, fsize length) {
     if (block_n >= MB.n_data_blocks || block_n < 0) {
         throw std::invalid_argument("Invalid data block number.");
     }
 
     if (std::abs(offset) >= MB.block_size) {
-        throw std::invalid_argument(
-            "Offest cannot be equal or greater than block size.");
+        throw std::invalid_argument("Offest cannot be equal or greater than block size.");
     }
 
     fsize real_offset = offset >= 0 ? offset : MB.block_size + offset;

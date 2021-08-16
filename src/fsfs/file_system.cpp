@@ -8,11 +8,9 @@
 
 namespace FSFS {
 
-fsize FileSystem::write(address inode_n, const data& wdata, fsize length,
-                        address offset) {
+fsize FileSystem::write(address inode_n, const data& wdata, fsize length, address offset) {
     if (offset < 0 || length < 0) {
-        throw std::invalid_argument(
-            "Offset, length and inode number cannot be less than 0");
+        throw std::invalid_argument("Offset, length and inode number cannot be less than 0");
     }
 
     if (!io.get_inode_bitmap().get_block_status(inode_n)) {
@@ -32,11 +30,9 @@ fsize FileSystem::write(address inode_n, const data& wdata, fsize length,
     return -1;
 }
 
-fsize FileSystem::read(address inode_n, data& rdata, fsize length,
-                       address offset) {
+fsize FileSystem::read(address inode_n, data& rdata, fsize length, address offset) {
     if (offset < 0 || length < 0) {
-        throw std::invalid_argument(
-            "Offset, length and inode number cannot be less than 0");
+        throw std::invalid_argument("Offset, length and inode number cannot be less than 0");
     }
 
     // if (!io.get_inode_bitmap().get_block_status(inode_n)) {
@@ -99,8 +95,7 @@ void FileSystem::mount() {
 void FileSystem::read_super_block(Disk& disk, super_block& MB) {
     disk.mount();
 
-    auto n_read = disk.read(fs_offset_super_block, reinterpret_cast<data*>(&MB),
-                            sizeof(super_block));
+    auto n_read = disk.read(fs_offset_super_block, reinterpret_cast<data*>(&MB), sizeof(super_block));
 
     if (n_read != sizeof(super_block)) {
         throw std::runtime_error("Cannot read super block");
@@ -108,8 +103,7 @@ void FileSystem::read_super_block(Disk& disk, super_block& MB) {
 
     for (int32_t i = 0; i < fs_data_row_size; i++) {
         if (MB.magic_number[i] != meta_magic_num_lut[i]) {
-            throw std::runtime_error(
-                "Super block corrupted. Magic number error.");
+            throw std::runtime_error("Super block corrupted. Magic number error.");
         }
     }
 
@@ -150,13 +144,10 @@ void FileSystem::format(Disk& disk) {
     std::fill(block.begin(), block.end(), fs_nullptr);
     for (auto i = 0; i < meta_blocks; i++) {
         block[i].inode.type = block_status::Free;
-        std::memcpy(block[i].inode.file_name, inode_def_file_name,
-                    meta_file_name_len);
+        std::memcpy(block[i].inode.file_name, inode_def_file_name, meta_file_name_len);
     }
     for (auto i = 0; i < n_inode_blocks; i++) {
-        disk.write(fs_offset_inode_block + i,
-                   reinterpret_cast<data*>(block.data()),
-                   disk.get_block_size());
+        disk.write(fs_offset_inode_block + i, reinterpret_cast<data*>(block.data()), disk.get_block_size());
     }
 
     disk.unmount();

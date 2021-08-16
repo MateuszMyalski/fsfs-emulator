@@ -42,13 +42,7 @@ class MemoryIO {
 
    public:
     MemoryIO(Disk& disk)
-        : disk(disk),
-          MB(),
-          inode_bitmap(),
-          data_bitmap(),
-          data_block(disk, MB),
-          iinode(disk, MB),
-          inode(disk, MB){};
+        : disk(disk), MB(), inode_bitmap(), data_bitmap(), data_block(disk, MB), iinode(disk, MB), inode(disk, MB){};
 
     void init(const super_block& MB);
 
@@ -59,21 +53,15 @@ class MemoryIO {
     fsize get_inode_length(address inode_n);
     address get_inode_file_name(address inode_n, char* file_name_buffer);
 
-    fsize write_data(address inode_n, const data* wdata, address offset,
-                     fsize length);
-    fsize read_data(address inode_n, const data* wdata, address offset,
-                    fsize length);
+    fsize write_data(address inode_n, const data* wdata, address offset, fsize length);
+    fsize read_data(address inode_n, const data* wdata, address offset, fsize length);
 
     void scan_blocks();
     fsize bytes_to_blocks(fsize length);
 
-    decltype(auto) get_inode_bitmap() const {
-        return get_inode_bitmap_common(this);
-    }
+    decltype(auto) get_inode_bitmap() const { return get_inode_bitmap_common(this); }
 
-    decltype(auto) get_data_bitmap() const {
-        return get_data_bitmap_common(this);
-    }
+    decltype(auto) get_data_bitmap() const { return get_data_bitmap_common(this); }
 };
 }
 #endif

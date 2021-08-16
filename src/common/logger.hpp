@@ -11,20 +11,7 @@
 namespace Utils {
 inline bool color_logs = true;
 
-enum class colors {
-    black,
-    red,
-    green,
-    yellow,
-    blue,
-    magenta,
-    cyan,
-    white,
-    warning,
-    fatal,
-    info,
-    reset
-};
+enum class colors { black, red, green, yellow, blue, magenta, cyan, white, warning, fatal, info, reset };
 
 namespace {
 inline void select_color(std::stringstream& stream, colors color) {

@@ -8,8 +8,7 @@ namespace FSFS {
 
 Disk::Disk(fsize block_size) : mounted(0), block_size(block_size) {
     if ((block_size % quant_block_size) != 0) {
-        throw std::invalid_argument(
-            "Block size must be multiplication of 1024.");
+        throw std::invalid_argument("Block size must be multiplication of 1024.");
     }
 }
 

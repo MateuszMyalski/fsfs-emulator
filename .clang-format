@@ -2,10 +2,10 @@
 BasedOnStyle: Google
 
 IndentWidth: 4
+ColumnLimit: 120
 
 DerivePointerAlignment: true
 PointerAlignment: Left
 
-AllowAllConstructorInitializersOnNextLine: true
 
 FixNamespaceComments: false

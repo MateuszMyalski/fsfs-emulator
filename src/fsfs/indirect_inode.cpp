@@ -2,8 +2,7 @@
 
 namespace FSFS {
 
-IndirectInode::IndirectInode(Disk& disk, const super_block& MB)
-    : disk(disk), MB(MB) {
+IndirectInode::IndirectInode(Disk& disk, const super_block& MB) : disk(disk), MB(MB) {
     disk.mount();
     reinit();
 }
@@ -22,10 +21,8 @@ void IndirectInode::reinit() {
 
 address IndirectInode::read_indirect(address base_addr, address ptr_n) {
     commit();
-    if (((ptr_n <= casch_info.high_ptr_n) && (ptr_n >= casch_info.low_ptr_n)) &&
-        (casch_info.nth_block != fs_nullptr) &&
-        (casch_info.base_addr != fs_nullptr) &&
-        (casch_info.nth_indirect != fs_nullptr)) {
+    if (((ptr_n <= casch_info.high_ptr_n) && (ptr_n >= casch_info.low_ptr_n)) && (casch_info.nth_block != fs_nullptr) &&
+        (casch_info.base_addr != fs_nullptr) && (casch_info.nth_indirect != fs_nullptr)) {
         return ptr_n;
     }
 
@@ -33,8 +30,7 @@ address IndirectInode::read_indirect(address base_addr, address ptr_n) {
     address addr_to_read = base_addr;
     address block_idx = 0;
 
-    if ((base_addr == casch_info.base_addr) &&
-        (ptr_n > casch_info.high_ptr_n)) {
+    if ((base_addr == casch_info.base_addr) && (ptr_n > casch_info.high_ptr_n)) {
         addr_to_read = indirect_ptr[n_ptrs_in_block - 1];
         block_idx = casch_info.nth_indirect + 1;
     }
@@ -46,8 +42,7 @@ address IndirectInode::read_indirect(address base_addr, address ptr_n) {
         }
 
         casch_info.nth_block = data_block_offset + addr_to_read;
-        fsize n_read =
-            disk.read(casch_info.nth_block, rwbuffer.data(), MB.block_size);
+        fsize n_read = disk.read(casch_info.nth_block, rwbuffer.data(), MB.block_size);
         if (n_read != MB.block_size) {
             throw std::runtime_error("Error while read operation.");
         }
@@ -166,8 +161,7 @@ void IndirectInode::commit() {
         return;
     }
 
-    fsize n_write =
-        disk.write(casch_info.nth_block, rwbuffer.data(), MB.block_size);
+    fsize n_write = disk.write(casch_info.nth_block, rwbuffer.data(), MB.block_size);
     if (n_write != MB.block_size) {
         throw std::runtime_error("Error while write operation.");
     }

@@ -12,9 +12,8 @@ class Timer {
     Timer() { update_time_point(); }
     milliseconds elapsed_ms() {
         std::scoped_lock lck(mtx);
-        auto delta = time_point_cast<TimePoint::duration>(
-                         system_clock::time_point(system_clock::now())) -
-                     saved_time_point;
+        auto delta =
+            time_point_cast<TimePoint::duration>(system_clock::time_point(system_clock::now())) - saved_time_point;
 
         return milliseconds(delta);
     }
@@ -23,13 +22,11 @@ class Timer {
         return saved_time_point;
     }
     TimePoint get_current_time_point() {
-        return time_point_cast<TimePoint::duration>(
-            system_clock::time_point(system_clock::now()));
+        return time_point_cast<TimePoint::duration>(system_clock::time_point(system_clock::now()));
     }
     void update_time_point() {
         std::scoped_lock lck(mtx);
-        saved_time_point = time_point_cast<TimePoint::duration>(
-            system_clock::time_point(system_clock::now()));
+        saved_time_point = time_point_cast<TimePoint::duration>(system_clock::time_point(system_clock::now()));
     }
 
     void operator+=(milliseconds time) {

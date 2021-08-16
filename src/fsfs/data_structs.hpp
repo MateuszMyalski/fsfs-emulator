@@ -50,9 +50,7 @@ union meta_block {
     inode_block inode;
     data raw_data[meta_fragm_size];
 
-    void operator=(data fill_data) {
-        std::fill(raw_data, &raw_data[meta_fragm_size], fill_data);
-    }
+    void operator=(data fill_data) { std::fill(raw_data, &raw_data[meta_fragm_size], fill_data); }
 };
 static_assert(sizeof(meta_block) == meta_fragm_size);
 }
