@@ -1,52 +1,33 @@
 #include "fsfs/memory_io.hpp"
 
-#include "disk-emulator/disk.hpp"
 #include "fsfs/data_block.hpp"
 #include "fsfs/file_system.hpp"
 #include "fsfs/indirect_inode.hpp"
 #include "fsfs/inode.hpp"
-#include "gtest/gtest.h"
+#include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class MemoryIOTest : public ::testing::Test {
+class MemoryIOTest : public ::testing::Test, public TestBaseFileSystem {
    protected:
-    constexpr static fsize block_size = 1024;
-
     MemoryIO* io;
-    Disk* disk;
-    super_block MB;
 
     std::vector<address> used_data_blocks;
     std::vector<address> used_inode_blocks;
 
    public:
     void SetUp() override {
-        disk = new Disk(block_size);
-        Disk::create("tmp_disk.img", 1024 * 10, block_size);
-        disk->open("tmp_disk.img");
-
-        FileSystem::format(*disk);
-        FileSystem::read_super_block(*disk, MB);
-
-        io = new MemoryIO(*disk);
+        io = new MemoryIO(disk);
 
         set_dummy_blocks();
         io->init(MB);
         io->scan_blocks();
     }
 
-    void TearDown() override {
-        delete io;
-
-        ASSERT_FALSE(disk->is_mounted());
-        delete disk;
-
-        std::remove("tmp_disk.img");
-    }
+    void TearDown() override { delete io; }
 
     void set_dummy_blocks() {
-        Inode inode(*disk, MB);
-        IndirectInode iinode(*disk, MB);
+        Inode inode(disk, MB);
+        IndirectInode iinode(disk, MB);
 
         inode.alloc(0);
         inode.commit();
@@ -107,7 +88,7 @@ class MemoryIOTest : public ::testing::Test {
     }
 };
 
-TEST_F(MemoryIOTest, bytes_to_block_test) {
+TEST_F(MemoryIOTest, bytes_to_block) {
     EXPECT_EQ(io->bytes_to_blocks(0), 0);
     EXPECT_EQ(io->bytes_to_blocks(-1), 0);
     EXPECT_EQ(io->bytes_to_blocks(MB.block_size / 2), 1);
@@ -118,7 +99,7 @@ TEST_F(MemoryIOTest, bytes_to_block_test) {
     EXPECT_EQ(io->bytes_to_blocks(2 * MB.block_size + 1), 3);
 }
 
-TEST_F(MemoryIOTest, scan_blocks_test) {
+TEST_F(MemoryIOTest, scan_blocks) {
     for (const auto inode_n : used_inode_blocks) {
         EXPECT_TRUE(io->get_inode_bitmap().get_block_status(inode_n));
     }
@@ -140,7 +121,7 @@ TEST_F(MemoryIOTest, scan_blocks_test) {
     }
 }
 
-TEST_F(MemoryIOTest, alloc_inode_test) {
+TEST_F(MemoryIOTest, alloc_inode) {
     EXPECT_EQ(io->alloc_inode("TOO LONG FILE NAME 012345678910"), fs_nullptr);
 
     auto addr = io->alloc_inode("Inode name");
@@ -148,7 +129,7 @@ TEST_F(MemoryIOTest, alloc_inode_test) {
     EXPECT_TRUE(io->get_inode_bitmap().get_block_status(addr));
 }
 
-TEST_F(MemoryIOTest, dealloc_inode_test) {
+TEST_F(MemoryIOTest, dealloc_inode) {
     address invalid_inode = MB.n_inode_blocks - 1;
     EXPECT_EQ(io->dealloc_inode(invalid_inode), fs_nullptr);
 
@@ -165,7 +146,7 @@ TEST_F(MemoryIOTest, dealloc_inode_test) {
     }
 }
 
-TEST_F(MemoryIOTest, rename_inode_test) {
+TEST_F(MemoryIOTest, rename_inode) {
     constexpr const char* file_name_ref = "Inode name_ref";
     address addr = io->alloc_inode(file_name_ref);
 

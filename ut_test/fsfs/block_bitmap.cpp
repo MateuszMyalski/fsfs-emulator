@@ -1,14 +1,10 @@
 #include "fsfs/block_bitmap.hpp"
 
-#include <exception>
-#include <vector>
-
-#include "gtest/gtest.h"
+#include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class BlockBitmapTest : public ::testing::Test {
+class BlockBitmapTest : public ::testing::Test, public TestBaseBasic {
    protected:
-    constexpr static fsize block_size = 1024;
     constexpr static fsize data_n_blocks = 2048;
     constexpr static auto bitmap_row_length = std::numeric_limits<bitmap_t>::digits;
 

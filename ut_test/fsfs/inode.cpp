@@ -1,17 +1,11 @@
 #include "fsfs/inode.hpp"
 
-#include "disk-emulator/disk.hpp"
-#include "fsfs/file_system.hpp"
-#include "gtest/gtest.h"
+#include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class InodeTest : public ::testing::Test {
+class InodeTest : public ::testing::Test, public TestBaseFileSystem {
    protected:
     Inode* inode;
-
-    constexpr static fsize block_size = 1024;
-    Disk* disk;
-    super_block MB;
 
     inode_block ref_inode1 = {};
     inode_block ref_inode2 = {};
@@ -40,23 +34,9 @@ class InodeTest : public ::testing::Test {
         ref_inode2.block_ptr[4] = 82;
         std::memcpy(ref_inode1.file_name, name, sizeof(name));
 
-        disk = new Disk(block_size);
-        Disk::create("tmp_disk.img", 1024 * 10, block_size);
-        disk->open("tmp_disk.img");
-
-        FileSystem::format(*disk);
-        FileSystem::read_super_block(*disk, MB);
-
-        inode = new Inode(*disk, MB);
+        inode = new Inode(disk, MB);
     }
-    void TearDown() override {
-        delete inode;
-
-        ASSERT_FALSE(disk->is_mounted());
-        delete disk;
-
-        std::remove("tmp_disk.img");
-    }
+    void TearDown() override { delete inode; }
 };
 
 TEST_F(InodeTest, get_inode_throw) {
@@ -77,12 +57,12 @@ TEST_F(InodeTest, alloc_inode_throw) {
     EXPECT_THROW(inode->alloc(MB.n_inode_blocks + 1), std::invalid_argument);
 }
 
-TEST_F(InodeTest, get_inode_test) {
+TEST_F(InodeTest, get_inode) {
     address test_inode1 = 0;
     address test_inode2 = block_size / meta_fragm_size;
 
-    disk->write(fs_offset_inode_block, reinterpret_cast<data*>(&ref_inode1), meta_fragm_size);
-    disk->write(fs_offset_inode_block + 1, reinterpret_cast<data*>(&ref_inode2), meta_fragm_size);
+    disk.write(inode_block_to_addr(0), reinterpret_cast<data*>(&ref_inode1), meta_fragm_size);
+    disk.write(inode_block_to_addr(1), reinterpret_cast<data*>(&ref_inode2), meta_fragm_size);
 
     EXPECT_EQ(ref_inode1.type, inode->get(test_inode1).type);
     EXPECT_EQ(ref_inode1.file_len, inode->get(test_inode1).file_len);
@@ -97,7 +77,7 @@ TEST_F(InodeTest, get_inode_test) {
     }
 }
 
-TEST_F(InodeTest, update_inode_test) {
+TEST_F(InodeTest, update_inode) {
     address test_inode1 = 0;
     address test_inode2 = block_size / meta_fragm_size;
 
@@ -122,7 +102,7 @@ TEST_F(InodeTest, update_inode_test) {
     std::vector<data> rdata(meta_fragm_size);
     inode_block* rinode = reinterpret_cast<inode_block*>(rdata.data());
 
-    disk->read(fs_offset_inode_block, rdata.data(), meta_fragm_size);
+    disk.read(inode_block_to_addr(0), rdata.data(), meta_fragm_size);
     EXPECT_EQ(rinode->type, ref_inode1.type);
     EXPECT_EQ(rinode->file_len, ref_inode1.file_len);
     EXPECT_EQ(rinode->indirect_inode_ptr, ref_inode1.indirect_inode_ptr);
@@ -131,7 +111,7 @@ TEST_F(InodeTest, update_inode_test) {
         EXPECT_EQ(rinode->block_ptr[i], ref_inode1.block_ptr[i]);
     }
 
-    disk->read(fs_offset_inode_block + 1, rdata.data(), meta_fragm_size);
+    disk.read(inode_block_to_addr(1), rdata.data(), meta_fragm_size);
     EXPECT_EQ(rinode->type, ref_inode2.type);
     EXPECT_EQ(rinode->file_len, ref_inode2.file_len);
     EXPECT_EQ(rinode->indirect_inode_ptr, ref_inode2.indirect_inode_ptr);
