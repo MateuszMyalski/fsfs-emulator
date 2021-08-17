@@ -20,11 +20,11 @@ void IndirectInode::reinit() {
 }
 
 address IndirectInode::read_indirect(address base_addr, address ptr_n) {
-    commit();
     if (((ptr_n <= casch_info.high_ptr_n) && (ptr_n >= casch_info.low_ptr_n)) && (casch_info.nth_block != fs_nullptr) &&
         (casch_info.base_addr != fs_nullptr) && (casch_info.nth_indirect != fs_nullptr)) {
         return ptr_n;
     }
+    commit();
 
     address nth_indirect = ptr_n / (n_ptrs_in_block - 1);
     address addr_to_read = base_addr;
