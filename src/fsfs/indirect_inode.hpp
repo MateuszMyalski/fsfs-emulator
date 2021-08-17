@@ -31,6 +31,12 @@ class IndirectInode {
             base_addr = fs_nullptr;
             nth_indirect = fs_nullptr;
         }
+
+        inline bool is_valid() {
+            return (nth_block == fs_nullptr) || (base_addr == fs_nullptr) || (nth_indirect == fs_nullptr);
+        }
+
+        inline bool is_cashed(address ptr_n) { return (ptr_n <= high_ptr_n) && (ptr_n >= low_ptr_n); }
     } casch_info;
 
     address read_indirect(address base_addr, address ptr_n);
