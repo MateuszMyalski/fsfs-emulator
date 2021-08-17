@@ -77,9 +77,8 @@ TEST_F(DataBlockTest, write) {
 
 TEST_F(DataBlockTest, read) {
     std::vector<data> wdata(block_size);
-    std::vector<data> rdata(block_size);
+    std::vector<data> rdata(block_size, 0x00);
     fill_dummy(wdata);
-    std::memset(rdata.data(), 0x0, rdata.size());
     disk.write(data_block_to_addr(0), wdata.data(), wdata.size());
 
     auto n_read = data_block->read(0, rdata.data(), 0, block_size / 2);
