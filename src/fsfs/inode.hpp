@@ -25,6 +25,12 @@ class Inode {
             low_block_n = fs_nullptr;
             high_block_n = fs_nullptr;
         }
+
+        inline bool is_valid() {
+            return (nth_block == fs_nullptr) || (low_block_n == fs_nullptr) || (high_block_n == fs_nullptr);
+        }
+
+        inline bool is_cashed(address inode_n) { return (inode_n < high_block_n) && (inode_n >= low_block_n); }
     } casch_info;
 
     address read_inode(address inode_n);

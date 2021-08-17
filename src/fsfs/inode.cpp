@@ -14,8 +14,7 @@ void Inode::reinit() {
 }
 
 address Inode::read_inode(address inode_n) {
-    if (((inode_n < casch_info.high_block_n) && (inode_n >= casch_info.low_block_n)) &&
-        casch_info.nth_block != fs_nullptr) {
+    if (casch_info.is_cashed(inode_n) && !casch_info.is_valid()) {
         return inode_n;
     }
 
