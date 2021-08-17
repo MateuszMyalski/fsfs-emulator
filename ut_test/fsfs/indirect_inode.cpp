@@ -176,7 +176,5 @@ TEST_F(IndirectInodeTest, get_block_address) {
     EXPECT_EQ(iinode->get_block_address(base_addr, n_ptrs_in_block - 2), base_addr);
     EXPECT_EQ(iinode->get_block_address(base_addr, 2 * n_ptrs_in_block - 3), second_node);
     EXPECT_EQ(iinode->get_block_address(base_addr, 3 * n_ptrs_in_block - 4), third_node);
-
-    // TODO add auto commit test
 }
 }
