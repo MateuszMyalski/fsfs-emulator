@@ -184,5 +184,33 @@ TEST_F(MemoryIOWriteDataTest, nested_indirect_blocks) {
     }
 }
 
-TEST_F(MemoryIOWriteDataTest, offset_write) {}
+TEST_F(MemoryIOWriteDataTest, offset_write) {
+    fsize data_len = block_size * meta_inode_ptr_len + 2 * block_size;
+    BufferType wdata(data_len);
+    fill_dummy(wdata);
+
+    address addr = io->alloc_inode(file_name);
+    fsize n_written = io->write_data(addr, wdata.data(), 0, data_len);
+
+    /* First edit */
+    constexpr fsize offset1 = 30;
+    constexpr fsize edit1_length = 20;
+    BufferType edit1_data(edit1_length);
+    memset(edit1_data.data(), 0xAA, edit1_length);
+    memcpy(&wdata[data_len - offset1], edit1_data.data(), edit1_length);
+    n_written = io->write_data(addr, edit1_data.data(), offset1, edit1_length);
+    EXPECT_EQ(n_written, edit1_length);
+
+    fsize reserved_blocks = io->bytes_to_blocks(data_len);
+    auto wdata_it = wdata.cbegin();
+
+    for (auto i = 0; i < meta_inode_ptr_len; i++) {
+        EXPECT_TRUE(check_block(inode->get(addr).block_ptr[i], wdata, wdata_it));
+    }
+    address base_indirect = inode->get(addr).indirect_inode_ptr;
+    for (auto i = 0; i < reserved_blocks - meta_inode_ptr_len; i++) {
+        address block_addr = iinode->get_ptr(base_indirect, i);
+        EXPECT_TRUE(check_block(block_addr, wdata, wdata_it));
+    }
+}
 }

@@ -29,6 +29,7 @@ class MemoryIO {
     address assign_data_block(address inode_n, fsize abs_ptr_n);
 
     fsize store_data(address data_n, const data* wdata, fsize length);
+    fsize edit_data(address inode_n, const data* wdata, fsize offset, fsize length);
 
     template <typename Self>
     static decltype(auto) get_inode_bitmap_common(Self* self) {

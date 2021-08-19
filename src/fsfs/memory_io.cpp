@@ -89,6 +89,39 @@ fsize MemoryIO::store_data(address data_n, const data* wdata, fsize length) {
     return data_block.write(data_n, wdata, 0, to_write);
 }
 
+fsize MemoryIO::edit_data(address inode_n, const data* wdata, fsize offset, fsize length) {
+    using std::min;
+
+    if (offset == 0) {
+        return 0;
+    }
+
+    fsize abs_offset = inode.get(inode_n).file_len - offset;
+    if (abs_offset < 0) {
+        return fs_nullptr;
+    }
+
+    fsize n_written = 0;
+
+    address ptr_n = abs_offset / MB.block_size;
+    fsize first_offset = abs_offset % MB.block_size;
+    n_written +=
+        data_block.write(get_abs_addr(inode_n, ptr_n), wdata, first_offset, min(MB.block_size - first_offset, length));
+
+    ptr_n += 1;
+    length -= n_written;
+    if (length > 0) {
+        fsize blocks_to_edit = bytes_to_blocks(length);
+        for (; ptr_n < blocks_to_edit; ptr_n++) {
+            address addr = get_abs_addr(inode_n, ptr_n);
+            fsize write_length = min(MB.block_size, length - n_written);
+            n_written += data_block.write(addr, &wdata[n_written], 0, write_length);
+        }
+    }
+
+    return n_written;
+}
+
 fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsize length) {
     using std::max;
     using std::min;
@@ -103,33 +136,10 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
         return 0;
     }
 
-    fsize real_offset = inode.get(inode_n).file_len - offset;
-    if (real_offset < 0) {
-        return fs_nullptr;
+    fsize n_written = edit_data(inode_n, wdata, offset, min(length, offset));
+    if (n_written == length || n_written == fs_nullptr) {
+        return n_written;
     }
-
-    fsize n_written = 0;
-    if (offset > 0) {
-        fsize edit_len = min(inode.get(inode_n).file_len - real_offset, length);
-        address start_ptr = real_offset / MB.block_size;
-
-        address ptr_n = 0;
-        fsize first_offset = real_offset % MB.block_size;
-        n_written += data_block.write(get_abs_addr(inode_n, start_ptr + ptr_n), &wdata[n_written], first_offset,
-                                      MB.block_size - first_offset);
-
-        ptr_n += 1;
-        for (; ptr_n < bytes_to_blocks(edit_len) - 1; ptr_n++) {
-            address ptr_addr = get_abs_addr(inode_n, start_ptr + ptr_n);
-            n_written += data_block.write(ptr_addr, &wdata[n_written], 0, MB.block_size);
-        }
-
-        if (n_written < edit_len) {
-            n_written += data_block.write(get_abs_addr(inode_n, start_ptr), &wdata[n_written], 0, edit_len - n_written);
-        }
-    }
-
-    // iF N-WRITTEN READY EXUT WITH LEN UPDATE
 
     fsize n_ptr_used = bytes_to_blocks(inode.get(inode_n).file_len);
     address last_ptr_n = max(0, n_ptr_used - 1);
