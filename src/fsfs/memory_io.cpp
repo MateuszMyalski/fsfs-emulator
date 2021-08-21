@@ -109,13 +109,13 @@ fsize MemoryIO::edit_data(address inode_n, const data* wdata, fsize offset, fsiz
         data_block.write(get_abs_addr(inode_n, ptr_n), wdata, first_offset, min(MB.block_size - first_offset, length));
 
     ptr_n += 1;
-    length -= n_written;
-    if (length > 0) {
+    if (length - n_written > 0) {
         fsize blocks_to_edit = bytes_to_blocks(length);
-        for (; ptr_n < blocks_to_edit; ptr_n++) {
+        for (auto i = 0; i < blocks_to_edit; i++) {
             address addr = get_abs_addr(inode_n, ptr_n);
             fsize write_length = min(MB.block_size, length - n_written);
             n_written += data_block.write(addr, &wdata[n_written], 0, write_length);
+            ptr_n++;
         }
     }
 
@@ -136,11 +136,12 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
         return 0;
     }
 
-    fsize n_written = edit_data(inode_n, wdata, offset, min(length, offset));
-    if (n_written == length || n_written == fs_nullptr) {
-        return n_written;
+    fsize n_eddited = edit_data(inode_n, wdata, offset, min(length, offset));
+    if (n_eddited == length || n_eddited == fs_nullptr) {
+        return n_eddited;
     }
 
+    fsize n_written = 0;
     fsize n_ptr_used = bytes_to_blocks(inode.get(inode_n).file_len);
     address last_ptr_n = max(0, n_ptr_used - 1);
     address base_indirect = inode.get(inode_n).indirect_inode_ptr;
@@ -148,11 +149,13 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
     fsize free_bytes = n_ptr_used * MB.block_size - inode.get(inode_n).file_len;
     if (free_bytes > 0) {
         address block_addr = get_abs_addr(inode_n, last_ptr_n);
-        n_written += data_block.write(block_addr, wdata, -free_bytes, free_bytes);
+        n_written += data_block.write(block_addr, &wdata[n_eddited], -free_bytes, free_bytes);
+    }
+    if (n_ptr_used != 0) {
         last_ptr_n++;
     }
 
-    fsize blocks_to_allocate = bytes_to_blocks(max(0, length - free_bytes));
+    fsize blocks_to_allocate = bytes_to_blocks(max(0, length - free_bytes - n_eddited));
     fsize n_direct_blocks = max(min(meta_inode_ptr_len - last_ptr_n, blocks_to_allocate), 0);
 
     for (auto i = 0; i < n_direct_blocks; i++) {
@@ -160,10 +163,10 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
         if (data_n == fs_nullptr) {
             inode.update(inode_n).file_len += n_written;
             inode.commit();
-            return n_written;
+            return n_written + n_eddited;
         }
 
-        n_written += store_data(data_n, &wdata[n_written], length - n_written);
+        n_written += store_data(data_n, &wdata[n_written + n_eddited], length - n_written - n_eddited);
         last_ptr_n += 1;
     }
     blocks_to_allocate -= n_direct_blocks;
@@ -175,7 +178,7 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
         if (indirect_block == fs_nullptr) {
             inode.update(inode_n).file_len += n_written;
             inode.commit();
-            return n_written;
+            return n_written + n_eddited;
         }
         base_indirect = indirect_block;
     }
@@ -189,10 +192,10 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
                 inode.update(inode_n).file_len += n_written;
                 iinode.commit();
                 inode.commit();
-                return n_written;
+                return n_written + n_eddited;
             }
 
-            n_written += store_data(data_n, &wdata[n_written], length - n_written);
+            n_written += store_data(data_n, &wdata[n_written + n_eddited], length - n_written - n_eddited);
             last_ptr_n += 1;
         }
         blocks_to_allocate -= n_blocks_to_write;
@@ -204,7 +207,7 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
                 inode.update(inode_n).file_len += n_written;
                 inode.commit();
                 iinode.commit();
-                return n_written;
+                return n_written + n_eddited;
             }
         }
         iinode.commit();
@@ -212,7 +215,7 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
     inode.update(inode_n).file_len += n_written;
     inode.commit();
 
-    return n_written;
+    return n_written + n_eddited;
 }
 
 address MemoryIO::read_data(address inode_n, const data* wdata, address offset, fsize length) {
