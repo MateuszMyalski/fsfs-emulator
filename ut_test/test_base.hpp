@@ -71,12 +71,5 @@ class TestBaseFileSystem : public TestBaseDisk {
     }
     ~TestBaseFileSystem() {}
 };
-
-class DummyBase : public testing::WithParamInterface<fsize> {
-   public:
-    fsize block_size = GetParam();
-};
-
-class DummyExt : public DummyBase {};
 }
 #endif
