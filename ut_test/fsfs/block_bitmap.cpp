@@ -5,7 +5,7 @@ using namespace FSFS;
 namespace {
 class BlockBitmapTest : public ::testing::Test, public TestBaseBasic {
    protected:
-    constexpr static fsize data_n_blocks = 2048;
+    constexpr static fsize data_n_blocks = block_size * 2;
     constexpr static auto bitmap_row_length = std::numeric_limits<bitmap_t>::digits;
 
     BlockBitmap* bitmap;
