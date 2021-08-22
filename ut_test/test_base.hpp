@@ -32,6 +32,10 @@ class TestBaseBasic : public testing::WithParamInterface<fsize> {
             el = static_cast<typeof(el)>(rnd_data);
         }
     }
+
+    bool cmp_data(DataBufferType& data_lhs, DataBufferType& data_rhs) {
+        return std::memcmp(data_lhs.data(), data_rhs.data(), data_lhs.size()) == 0;
+    }
 };
 
 class TestBaseDisk : public TestBaseBasic {
