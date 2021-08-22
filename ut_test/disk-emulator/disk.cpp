@@ -190,5 +190,4 @@ TEST_P(DiskTest, write_and_read_test_unchanged_other_blocks) {
 }
 
 INSTANTIATE_TEST_SUITE_P(BlockSize, DiskTest, testing::ValuesIn(valid_block_sizes));
-
 }
