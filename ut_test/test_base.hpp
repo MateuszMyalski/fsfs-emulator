@@ -36,6 +36,10 @@ class TestBaseBasic : public testing::WithParamInterface<fsize> {
     bool cmp_data(DataBufferType& data_lhs, DataBufferType& data_rhs) {
         return std::memcmp(data_lhs.data(), data_rhs.data(), data_lhs.size()) == 0;
     }
+
+    bool cmp_data(const data* data_lhs, const data* data_rhs, size_t length) {
+        return std::memcmp(data_lhs, data_rhs, length) == 0;
+    }
 };
 
 class TestBaseDisk : public TestBaseBasic {
