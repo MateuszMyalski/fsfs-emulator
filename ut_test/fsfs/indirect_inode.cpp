@@ -4,7 +4,7 @@
 
 using namespace FSFS;
 namespace {
-class IndirectInodeTest : public ::testing::Test, public TestBaseFileSystem {
+class IndirectInodeTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
    protected:
     IndirectInode* iinode;
 
@@ -15,37 +15,37 @@ class IndirectInodeTest : public ::testing::Test, public TestBaseFileSystem {
     void TearDown() override { delete iinode; }
 };
 
-TEST_F(IndirectInodeTest, get_ptr_throw) {
+TEST_P(IndirectInodeTest, get_ptr_throw) {
     EXPECT_THROW(iinode->get_ptr(-1, 0), std::invalid_argument);
     EXPECT_THROW(iinode->get_ptr(MB.n_data_blocks, 0), std::invalid_argument);
     EXPECT_THROW(iinode->get_ptr(0, -1), std::invalid_argument);
 }
 
-TEST_F(IndirectInodeTest, set_ptr_throw) {
+TEST_P(IndirectInodeTest, set_ptr_throw) {
     EXPECT_THROW(iinode->set_ptr(-1, 0), std::invalid_argument);
     EXPECT_THROW(iinode->set_ptr(MB.n_data_blocks, 0), std::invalid_argument);
     EXPECT_THROW(iinode->set_ptr(0, -1), std::invalid_argument);
 }
 
-TEST_F(IndirectInodeTest, get_indirect_block_address_throw) {
+TEST_P(IndirectInodeTest, get_indirect_block_address_throw) {
     EXPECT_THROW(iinode->get_block_address(-1, 0), std::invalid_argument);
     EXPECT_THROW(iinode->get_block_address(MB.n_data_blocks, 0), std::invalid_argument);
     EXPECT_THROW(iinode->get_block_address(0, -1), std::invalid_argument);
 }
 
-TEST_F(IndirectInodeTest, set_indirect_address_throw) {
+TEST_P(IndirectInodeTest, set_indirect_address_throw) {
     EXPECT_THROW(iinode->set_indirect_address(-1, 0), std::invalid_argument);
     EXPECT_THROW(iinode->set_indirect_address(MB.n_data_blocks, 0), std::invalid_argument);
     EXPECT_THROW(iinode->set_indirect_address(0, -1), std::invalid_argument);
     EXPECT_THROW(iinode->set_indirect_address(0, MB.n_data_blocks), std::invalid_argument);
 }
 
-TEST_F(IndirectInodeTest, alloc_indirect_inode_throw) {
+TEST_P(IndirectInodeTest, alloc_indirect_inode_throw) {
     EXPECT_THROW(iinode->alloc(-1), std::invalid_argument);
     EXPECT_THROW(iinode->alloc(MB.n_data_blocks), std::invalid_argument);
 }
 
-TEST_F(IndirectInodeTest, get_ptr) {
+TEST_P(IndirectInodeTest, get_ptr) {
     address ptr_idx = 0;
     address base_addr = 0;
     std::vector<address> indirect_block(n_ptrs_in_block);
@@ -90,7 +90,7 @@ TEST_F(IndirectInodeTest, get_ptr) {
     EXPECT_THROW(iinode->get_ptr(base_addr, 3 * n_ptrs_in_block - 1), std::runtime_error);
 }
 
-TEST_F(IndirectInodeTest, set_ptr) {
+TEST_P(IndirectInodeTest, set_ptr) {
     constexpr address base_addr = 0;
     constexpr address second_node = 10;
     constexpr address third_node = 15;
@@ -156,7 +156,7 @@ TEST_F(IndirectInodeTest, set_ptr) {
     r_ptr_idx += n_ptrs_in_block - 1;
 }
 
-TEST_F(IndirectInodeTest, get_block_address) {
+TEST_P(IndirectInodeTest, get_block_address) {
     constexpr address base_addr = 0;
     constexpr address second_node = 10;
     constexpr address third_node = 15;
@@ -177,4 +177,6 @@ TEST_F(IndirectInodeTest, get_block_address) {
     EXPECT_EQ(iinode->get_block_address(base_addr, 2 * n_ptrs_in_block - 3), second_node);
     EXPECT_EQ(iinode->get_block_address(base_addr, 3 * n_ptrs_in_block - 4), third_node);
 }
+
+INSTANTIATE_TEST_SUITE_P(BlockSize, IndirectInodeTest, testing::ValuesIn(valid_block_sizes));
 }

@@ -3,7 +3,7 @@
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class DataBlockTest : public ::testing::Test, public TestBaseFileSystem {
+class DataBlockTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
    protected:
     DataBlock* data_block;
 
@@ -12,7 +12,7 @@ class DataBlockTest : public ::testing::Test, public TestBaseFileSystem {
     void TearDown() override { delete data_block; }
 };
 
-TEST_F(DataBlockTest, write_throw) {
+TEST_P(DataBlockTest, write_throw) {
     data dummy_data = 0x00;
     EXPECT_THROW(data_block->write(MB.n_data_blocks, &dummy_data, 0, 0), std::invalid_argument);
     EXPECT_THROW(data_block->write(-1, &dummy_data, 0, 0), std::invalid_argument);
@@ -23,7 +23,7 @@ TEST_F(DataBlockTest, write_throw) {
     EXPECT_THROW(data_block->write(0, &dummy_data, 0, -1), std::invalid_argument);
 }
 
-TEST_F(DataBlockTest, read_throw) {
+TEST_P(DataBlockTest, read_throw) {
     data dummy_data = 0x00;
     EXPECT_THROW(data_block->read(MB.n_data_blocks, &dummy_data, 0, 0), std::invalid_argument);
     EXPECT_THROW(data_block->read(-1, &dummy_data, 0, 0), std::invalid_argument);
@@ -37,7 +37,7 @@ TEST_F(DataBlockTest, read_throw) {
     EXPECT_THROW(data_block->read(0, &dummy_data, block_size - 1, 2), std::invalid_argument);
 }
 
-TEST_F(DataBlockTest, write) {
+TEST_P(DataBlockTest, write) {
     std::vector<data> wdata(block_size / 2);
     std::vector<data> rdata(block_size);
     fill_dummy(wdata);
@@ -75,7 +75,7 @@ TEST_F(DataBlockTest, write) {
     EXPECT_EQ(rdata[block_size - 1], wdata.back());
 }
 
-TEST_F(DataBlockTest, read) {
+TEST_P(DataBlockTest, read) {
     std::vector<data> wdata(block_size);
     std::vector<data> rdata(block_size, 0x00);
     fill_dummy(wdata);
@@ -98,4 +98,6 @@ TEST_F(DataBlockTest, read) {
         EXPECT_EQ(wdata[i], rdata[i]);
     }
 }
+
+INSTANTIATE_TEST_SUITE_P(BlockSize, DataBlockTest, testing::ValuesIn(valid_block_sizes));
 }

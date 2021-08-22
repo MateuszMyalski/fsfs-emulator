@@ -3,9 +3,8 @@
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class BlockBitmapTest : public ::testing::Test, public TestBaseBasic {
+class BlockBitmapTest : public ::testing::TestWithParam<fsize>, public TestBaseBasic {
    protected:
-    constexpr static fsize data_n_blocks = block_size * 2;
     constexpr static auto bitmap_row_length = std::numeric_limits<bitmap_t>::digits;
 
     BlockBitmap* bitmap;
@@ -16,19 +15,19 @@ class BlockBitmapTest : public ::testing::Test, public TestBaseBasic {
     void TearDown() override { delete bitmap; }
 };
 
-TEST_F(BlockBitmapTest, get_data_block_throw) {
-    EXPECT_THROW(bitmap->get_block_status(data_n_blocks), std::runtime_error);
+TEST_P(BlockBitmapTest, get_data_block_throw) {
+    EXPECT_THROW(bitmap->get_block_status(n_blocks), std::runtime_error);
 
-    bitmap->init(data_n_blocks);
+    bitmap->init(n_blocks);
 
-    EXPECT_THROW(bitmap->get_block_status(data_n_blocks), std::invalid_argument);
+    EXPECT_THROW(bitmap->get_block_status(n_blocks), std::invalid_argument);
     EXPECT_THROW(bitmap->get_block_status(-1), std::invalid_argument);
 
-    bitmap->get_block_status(data_n_blocks - 1);
+    bitmap->get_block_status(n_blocks - 1);
 }
 
-TEST_F(BlockBitmapTest, set_and_get_map_line_border) {
-    bitmap->init(data_n_blocks);
+TEST_P(BlockBitmapTest, set_and_get_map_line_border) {
+    bitmap->init(n_blocks);
 
     EXPECT_EQ(bitmap->get_block_status(0), 0);
 
@@ -51,8 +50,8 @@ TEST_F(BlockBitmapTest, set_and_get_map_line_border) {
     EXPECT_EQ(bitmap->get_block_status(bitmap_row_length + 1), 0);
 }
 
-TEST_F(BlockBitmapTest, set_and_get_block) {
-    bitmap->init(data_n_blocks);
+TEST_P(BlockBitmapTest, set_and_get_block) {
+    bitmap->init(n_blocks);
 
     bitmap->set_block(block_size - 1, 1);
     EXPECT_EQ(bitmap->get_block_status(block_size - 1), 1);
@@ -66,19 +65,19 @@ TEST_F(BlockBitmapTest, set_and_get_block) {
     EXPECT_EQ(bitmap->get_block_status(block_size + 1), 0);
 }
 
-TEST_F(BlockBitmapTest, next_free_throw) {
+TEST_P(BlockBitmapTest, next_free_throw) {
     EXPECT_THROW(bitmap->next_free(-1), std::invalid_argument);
     EXPECT_THROW(bitmap->next_free(0), std::runtime_error);
 
-    bitmap->init(data_n_blocks);
+    bitmap->init(n_blocks);
 
     EXPECT_THROW(bitmap->next_free(-1), std::invalid_argument);
-    EXPECT_THROW(bitmap->next_free(data_n_blocks), std::runtime_error);
-    EXPECT_THROW(bitmap->next_free(data_n_blocks + 1), std::runtime_error);
+    EXPECT_THROW(bitmap->next_free(n_blocks), std::runtime_error);
+    EXPECT_THROW(bitmap->next_free(n_blocks + 1), std::runtime_error);
 }
 
-TEST_F(BlockBitmapTest, next_free) {
-    bitmap->init(data_n_blocks);
+TEST_P(BlockBitmapTest, next_free) {
+    bitmap->init(n_blocks);
 
     EXPECT_EQ(bitmap->next_free(0), 0);
     EXPECT_EQ(bitmap->next_free(2), 2);
@@ -96,13 +95,16 @@ TEST_F(BlockBitmapTest, next_free) {
     bitmap->set_block(bitmap_row_length - 5, 0);
     EXPECT_EQ(bitmap->next_free(0), bitmap_row_length - 5);
 
-    for (auto i = 0; i < data_n_blocks; i++) {
+    for (auto i = 0; i < n_blocks; i++) {
         bitmap->set_block(i, 1);
     }
 
     EXPECT_EQ(bitmap->next_free(0), -1);
 
-    bitmap->set_block(data_n_blocks - 1, 0);
-    EXPECT_EQ(bitmap->next_free(0), data_n_blocks - 1);
+    bitmap->set_block(n_blocks - 1, 0);
+    EXPECT_EQ(bitmap->next_free(0), n_blocks - 1);
 }
+
+INSTANTIATE_TEST_SUITE_P(BlockSize, BlockBitmapTest, testing::ValuesIn(valid_block_sizes));
+
 }

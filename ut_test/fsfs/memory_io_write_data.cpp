@@ -6,7 +6,7 @@
 
 using namespace FSFS;
 namespace {
-class MemoryIOWriteDataTest : public ::testing::Test, public TestBaseFileSystem {
+class MemoryIOWriteDataTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
    protected:
     constexpr static const char* file_name = "SampleFile";
     fsize n_ptr_in_data_block = block_size / sizeof(address);
@@ -52,7 +52,7 @@ class MemoryIOWriteDataTest : public ::testing::Test, public TestBaseFileSystem 
     }
 };
 
-TEST_F(MemoryIOWriteDataTest, sanity_check) {
+TEST_P(MemoryIOWriteDataTest, sanity_check) {
     address invalid_inode = MB.n_inode_blocks - 1;
     BufferType wdata(1);
 
@@ -63,7 +63,7 @@ TEST_F(MemoryIOWriteDataTest, sanity_check) {
     EXPECT_EQ(io->write_data(addr, wdata.data(), 0, 0), 0);
 }
 
-TEST_F(MemoryIOWriteDataTest, two_blocks) {
+TEST_P(MemoryIOWriteDataTest, two_blocks) {
     fsize data_len = block_size * 2;
     BufferType wdata(data_len);
     fill_dummy(wdata);
@@ -82,7 +82,7 @@ TEST_F(MemoryIOWriteDataTest, two_blocks) {
     EXPECT_TRUE(check_block(inode->get(addr).block_ptr[1], wdata, wdata_it));
 }
 
-TEST_F(MemoryIOWriteDataTest, uneven_direct_blocks) {
+TEST_P(MemoryIOWriteDataTest, uneven_direct_blocks) {
     fsize data_len = block_size * 2 + 1;
     BufferType wdata(data_len);
     fill_dummy(wdata);
@@ -103,7 +103,7 @@ TEST_F(MemoryIOWriteDataTest, uneven_direct_blocks) {
     EXPECT_TRUE(check_block(inode->get(addr).block_ptr[2], wdata, wdata_it));
 }
 
-TEST_F(MemoryIOWriteDataTest, single_indirect_blocks) {
+TEST_P(MemoryIOWriteDataTest, single_indirect_blocks) {
     fsize data_len = block_size * meta_inode_ptr_len + 1;
     BufferType wdata(data_len);
     fill_dummy(wdata);
@@ -128,7 +128,7 @@ TEST_F(MemoryIOWriteDataTest, single_indirect_blocks) {
     EXPECT_TRUE(check_block(indirect_n0, wdata, wdata_it));
 }
 
-TEST_F(MemoryIOWriteDataTest, append_data_uneven) {
+TEST_P(MemoryIOWriteDataTest, append_data_uneven) {
     fsize data_len = block_size * 2 + 1;
     fsize total_len = data_len + data_len;
     BufferType wdata(total_len);
@@ -155,7 +155,7 @@ TEST_F(MemoryIOWriteDataTest, append_data_uneven) {
     EXPECT_TRUE(check_block(inode->get(addr).block_ptr[4], wdata, wdata_it));
 }
 
-TEST_F(MemoryIOWriteDataTest, append_data_even) {
+TEST_P(MemoryIOWriteDataTest, append_data_even) {
     fsize data_len = block_size;
     fsize total_len = data_len + data_len;
     BufferType wdata(total_len);
@@ -176,7 +176,7 @@ TEST_F(MemoryIOWriteDataTest, append_data_even) {
     EXPECT_TRUE(check_block(inode->get(addr).block_ptr[1], wdata, wdata_it));
 }
 
-TEST_F(MemoryIOWriteDataTest, nested_indirect_blocks) {
+TEST_P(MemoryIOWriteDataTest, nested_indirect_blocks) {
     fsize data_len = block_size * meta_inode_ptr_len + 2 * block_size * iinode->get_n_ptrs_in_block();
     BufferType wdata(data_len);
     fill_dummy(wdata);
@@ -206,8 +206,8 @@ TEST_F(MemoryIOWriteDataTest, nested_indirect_blocks) {
     }
 }
 
-TEST_F(MemoryIOWriteDataTest, offset_write) {
-    constexpr fsize data_len = block_size * meta_inode_ptr_len + 2 * block_size;
+TEST_P(MemoryIOWriteDataTest, offset_write) {
+    fsize data_len = block_size * meta_inode_ptr_len + 2 * block_size;
     BufferType wdata(data_len);
     fill_dummy(wdata);
 
@@ -224,8 +224,8 @@ TEST_F(MemoryIOWriteDataTest, offset_write) {
     EXPECT_EQ(n_written, edit1_length);
 
     /* Second edit */
-    constexpr fsize edit2_length = block_size + 1;
-    constexpr fsize offset2 = block_size * meta_inode_ptr_len;
+    fsize edit2_length = block_size + 1;
+    fsize offset2 = block_size * meta_inode_ptr_len;
     BufferType edit2_data(edit2_length);
     memset(edit2_data.data(), 0xBB, edit2_length);
     memcpy(&wdata[data_len - offset2], edit1_data.data(), edit2_length);
@@ -233,9 +233,9 @@ TEST_F(MemoryIOWriteDataTest, offset_write) {
     EXPECT_EQ(n_written, edit2_length);
 
     /* Third edit and add */
-    constexpr fsize edit3_length = block_size - 3;
-    constexpr fsize offset3 = edit3_length;
-    constexpr fsize add_length = block_size / 2;
+    fsize edit3_length = block_size - 3;
+    fsize offset3 = edit3_length;
+    fsize add_length = block_size / 2;
     BufferType edit3_data(edit3_length + add_length);
     memset(edit3_data.data(), 0xCC, edit3_length);
     memset(&edit3_data[edit3_length], 0xFF, add_length);
@@ -259,4 +259,7 @@ TEST_F(MemoryIOWriteDataTest, offset_write) {
         EXPECT_TRUE(check_block(block_addr, wdata, wdata_it));
     }
 }
+
+INSTANTIATE_TEST_SUITE_P(BlockSize, MemoryIOWriteDataTest, testing::ValuesIn(valid_block_sizes));
+
 }

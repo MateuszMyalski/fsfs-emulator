@@ -7,7 +7,7 @@
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class MemoryIOTest : public ::testing::Test, public TestBaseFileSystem {
+class MemoryIOTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
    protected:
     MemoryIO* io;
 
@@ -88,7 +88,7 @@ class MemoryIOTest : public ::testing::Test, public TestBaseFileSystem {
     }
 };
 
-TEST_F(MemoryIOTest, bytes_to_block) {
+TEST_P(MemoryIOTest, bytes_to_block) {
     EXPECT_EQ(io->bytes_to_blocks(0), 0);
     EXPECT_EQ(io->bytes_to_blocks(-1), 0);
     EXPECT_EQ(io->bytes_to_blocks(MB.block_size / 2), 1);
@@ -99,7 +99,7 @@ TEST_F(MemoryIOTest, bytes_to_block) {
     EXPECT_EQ(io->bytes_to_blocks(2 * MB.block_size + 1), 3);
 }
 
-TEST_F(MemoryIOTest, scan_blocks) {
+TEST_P(MemoryIOTest, scan_blocks) {
     for (const auto inode_n : used_inode_blocks) {
         EXPECT_TRUE(io->get_inode_bitmap().get_block_status(inode_n));
     }
@@ -121,7 +121,7 @@ TEST_F(MemoryIOTest, scan_blocks) {
     }
 }
 
-TEST_F(MemoryIOTest, alloc_inode) {
+TEST_P(MemoryIOTest, alloc_inode) {
     EXPECT_EQ(io->alloc_inode("TOO LONG FILE NAME 012345678910"), fs_nullptr);
 
     auto addr = io->alloc_inode("Inode name");
@@ -129,7 +129,7 @@ TEST_F(MemoryIOTest, alloc_inode) {
     EXPECT_TRUE(io->get_inode_bitmap().get_block_status(addr));
 }
 
-TEST_F(MemoryIOTest, dealloc_inode) {
+TEST_P(MemoryIOTest, dealloc_inode) {
     address invalid_inode = MB.n_inode_blocks - 1;
     EXPECT_EQ(io->dealloc_inode(invalid_inode), fs_nullptr);
 
@@ -146,7 +146,7 @@ TEST_F(MemoryIOTest, dealloc_inode) {
     }
 }
 
-TEST_F(MemoryIOTest, rename_inode) {
+TEST_P(MemoryIOTest, rename_inode) {
     constexpr const char* file_name_ref = "Inode name_ref";
     address addr = io->alloc_inode(file_name_ref);
 
@@ -160,4 +160,6 @@ TEST_F(MemoryIOTest, rename_inode) {
     io->get_inode_file_name(addr, file_name);
     EXPECT_STREQ(file_name, file_name_ref2);
 }
+
+INSTANTIATE_TEST_SUITE_P(BlockSize, MemoryIOTest, testing::ValuesIn(valid_block_sizes));
 }

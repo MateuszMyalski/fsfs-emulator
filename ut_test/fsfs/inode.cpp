@@ -3,7 +3,7 @@
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class InodeTest : public ::testing::Test, public TestBaseFileSystem {
+class InodeTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
    protected:
     Inode* inode;
 
@@ -39,25 +39,25 @@ class InodeTest : public ::testing::Test, public TestBaseFileSystem {
     void TearDown() override { delete inode; }
 };
 
-TEST_F(InodeTest, get_inode_throw) {
+TEST_P(InodeTest, get_inode_throw) {
     EXPECT_THROW(inode->get(-1), std::invalid_argument);
     EXPECT_THROW(inode->get(MB.n_inode_blocks), std::invalid_argument);
     EXPECT_THROW(inode->get(MB.n_inode_blocks + 1), std::invalid_argument);
 }
 
-TEST_F(InodeTest, update_inode_throw) {
+TEST_P(InodeTest, update_inode_throw) {
     EXPECT_THROW(inode->update(-1), std::invalid_argument);
     EXPECT_THROW(inode->update(MB.n_inode_blocks), std::invalid_argument);
     EXPECT_THROW(inode->update(MB.n_inode_blocks + 1), std::invalid_argument);
 }
 
-TEST_F(InodeTest, alloc_inode_throw) {
+TEST_P(InodeTest, alloc_inode_throw) {
     EXPECT_THROW(inode->alloc(-1), std::invalid_argument);
     EXPECT_THROW(inode->alloc(MB.n_inode_blocks), std::invalid_argument);
     EXPECT_THROW(inode->alloc(MB.n_inode_blocks + 1), std::invalid_argument);
 }
 
-TEST_F(InodeTest, get_inode) {
+TEST_P(InodeTest, get_inode) {
     address test_inode1 = 0;
     address test_inode2 = block_size / meta_fragm_size;
 
@@ -77,7 +77,7 @@ TEST_F(InodeTest, get_inode) {
     }
 }
 
-TEST_F(InodeTest, update_inode) {
+TEST_P(InodeTest, update_inode) {
     address test_inode1 = 0;
     address test_inode2 = block_size / meta_fragm_size;
 
@@ -121,7 +121,7 @@ TEST_F(InodeTest, update_inode) {
     }
 }
 
-TEST_F(InodeTest, alloc_inode) {
+TEST_P(InodeTest, alloc_inode) {
     address test_inode1 = 0;
     address test_inode2 = block_size / meta_fragm_size;
 
@@ -149,4 +149,6 @@ TEST_F(InodeTest, alloc_inode) {
         EXPECT_EQ(ptr, fs_nullptr);
     }
 }
+
+INSTANTIATE_TEST_SUITE_P(BlockSize, InodeTest, testing::ValuesIn(valid_block_sizes));
 }

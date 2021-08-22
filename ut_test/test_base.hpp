@@ -9,19 +9,24 @@
 #include "gtest/gtest.h"
 
 namespace FSFS {
-class TestBaseBasic {
+
+constexpr fsize block_size_quant = 1024;
+const fsize valid_block_sizes[] = {block_size_quant, block_size_quant * 2, block_size_quant * 3, block_size_quant * 4};
+class TestBaseBasic : public testing::WithParamInterface<fsize> {
    protected:
-    constexpr static fsize block_size = 1024;
-    constexpr static fsize n_blocks = 2000;
-    constexpr static fsize disk_size = block_size * n_blocks;
+    fsize block_size = GetParam();
+    fsize n_blocks = GetParam() * (GetParam() / block_size_quant + 1);
+    fsize disk_size = block_size * n_blocks;
     constexpr static char disk_name[] = "_tmp_disk.img";
 
     constexpr static auto rnd_seed = 0xCAFE;
 
    public:
+    using DataBufferType = std::vector<data>;
+
     template <typename T>
     void fill_dummy(T& data) {
-        srand(rnd_seed);  // use current time as seed for random generator
+        srand(rnd_seed);
         for (auto& el : data) {
             int rnd_data = rand();
             el = static_cast<typeof(el)>(rnd_data);
@@ -67,5 +72,11 @@ class TestBaseFileSystem : public TestBaseDisk {
     ~TestBaseFileSystem() {}
 };
 
+class DummyBase : public testing::WithParamInterface<fsize> {
+   public:
+    fsize block_size = GetParam();
+};
+
+class DummyExt : public DummyBase {};
 }
 #endif

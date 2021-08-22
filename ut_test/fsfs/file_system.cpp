@@ -3,13 +3,13 @@
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class FileSystemTest : public ::testing::Test, public TestBaseFileSystem {
+class FileSystemTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
    protected:
    public:
     void SetUp() override {}
     void TearDown() override {}
 };
-TEST_F(FileSystemTest, format) {
+TEST_P(FileSystemTest, format) {
     fsize real_disk_size = disk.get_disk_size() - 1;
     fsize n_inode_blocks = real_disk_size * 0.1;
     fsize n_data_blocks = real_disk_size - n_inode_blocks;
@@ -47,4 +47,5 @@ TEST_F(FileSystemTest, format) {
     disk.unmount();
 }
 
+INSTANTIATE_TEST_SUITE_P(BlockSize, FileSystemTest, testing::ValuesIn(valid_block_sizes));
 }
