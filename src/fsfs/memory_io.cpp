@@ -238,7 +238,7 @@ address MemoryIO::alloc_inode(const char* file_name) {
     address inode_n = inode_bitmap.next_free(0);
 
     /* No more free inodes */
-    if (-1 == inode_n) {
+    if (fs_nullptr == inode_n) {
         return fs_nullptr;
     }
 
