@@ -33,22 +33,20 @@ class MemoryIOWriteDataTest : public ::testing::Test, public TestBaseFileSystem 
 
         delete io;
     }
-    int64_t cnt = 0;
+
     bool check_block(address block_n, const BufferType& ref_data, BufferType::const_iterator& ref_data_it) {
         DataBlock data_block(disk, MB);
         BufferType rdata(block_size);
         data_block.read(block_n, rdata.data(), 0, block_size);
 
         auto rdata_it = rdata.cbegin();
-        while ((rdata_it != rdata.end()) && (ref_data_it != ref_data.end())) {
+        while ((rdata_it != rdata.cend()) && (ref_data_it != ref_data.cend())) {
             if (*rdata_it != *ref_data_it) {
-                std::cout << "eror " << cnt << '\n';
                 printf("Expected: %d instead of: %d\n", *ref_data_it, *rdata_it);
                 return false;
             }
             rdata_it++;
             ref_data_it++;
-            cnt++;
         }
         return true;
     }
