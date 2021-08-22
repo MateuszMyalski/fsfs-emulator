@@ -181,9 +181,7 @@ TEST_P(DiskTest, write_and_read_test_unchanged_other_blocks) {
     ASSERT_EQ(n_read, tmp_disk_size - block_size);
     disk.unmount();
 
-    for (auto i = 0; i < n_read; i++) {
-        ASSERT_EQ(ref_data[block_size + i], r_data[i]);
-    }
+    EXPECT_TRUE(cmp_data(&ref_data[block_size], r_data.data(), n_read));
     for (auto i = 0; i < block_size; i++) {
         ASSERT_EQ(guard_value, r_data[n_read + i]);
     }
