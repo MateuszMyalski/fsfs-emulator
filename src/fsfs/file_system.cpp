@@ -30,72 +30,22 @@ fsize FileSystem::write(address inode_n, const data& wdata, fsize length, addres
     return -1;
 }
 
-fsize FileSystem::read(address inode_n, data& rdata, fsize length, address offset) {
-    if (offset < 0 || length < 0) {
-        throw std::invalid_argument("Offset, length and inode number cannot be less than 0");
-    }
+fsize FileSystem::read(address inode_n, data& rdata, fsize length, address offset) { return -1; }
 
-    // if (!io.get_inode_bitmap().get_block_status(inode_n)) {
-    //     throw std::runtime_error("Inode not allocated.");
-    // }
+void FileSystem::remove(address inode_n) {}
 
-    if (length == 0) {
-        return 0;
-    }
-
-    inode_block inode = {};
-    // io.get_inode(inode_n, inode);
-    if (inode.file_len < offset) {
-        throw std::runtime_error("Offset is greater than file length.");
-    }
-
-    address block_offset = offset / MB.block_size;
-    address last_block = block_offset + length / MB.block_size;
-    last_block += length % MB.block_size ? 1 : 0;
-
-    return -1;
-}
-
-void FileSystem::remove(address inode_n) {
-    if (!io.get_inode_bitmap().get_block_status(inode_n)) {
-        throw std::runtime_error("Cannot remove unused inode.");
-    }
-    inode_block inode = {};
-    inode.type = block_status::Free;
-    // io.set_inode(inode_n, inode);
-}
-
-address FileSystem::create(const char* file_name) {
-    address inode_addr = io.get_inode_bitmap().next_free(0);
-    if (inode_addr == -1) {
-        throw std::runtime_error("No more free inodes.");
-    }
-
-    inode_block inode = {};
-
-    inode.type = block_status::Used;
-    for (auto& ptr : inode.block_ptr) {
-        ptr = fs_nullptr;
-    }
-    inode.indirect_inode_ptr = fs_nullptr;
-    inode.file_len = 0;
-    std::strcpy(inode.file_name, file_name);
-    // io.set_inode(inode_addr, inode);
-
-    return inode_addr;
-}
+address FileSystem::create(const char* file_name) { return -1; }
 
 void FileSystem::mount() {
     read_super_block(disk, MB);
-    io.init(MB);
+    // io.init(MB);
     disk.mount();
-    io.scan_blocks();
 }
 
 void FileSystem::read_super_block(Disk& disk, super_block& MB) {
     disk.mount();
 
-    auto n_read = disk.read(fs_offset_super_block, reinterpret_cast<data*>(&MB), sizeof(super_block));
+    auto n_read = disk.read(fs_offset_super_block, cast_to_data(&MB), sizeof(super_block));
 
     if (n_read != sizeof(super_block)) {
         throw std::runtime_error("Cannot read super block");
@@ -147,7 +97,7 @@ void FileSystem::format(Disk& disk) {
         std::memcpy(block[i].inode.file_name, inode_def_file_name, meta_file_name_len);
     }
     for (auto i = 0; i < n_inode_blocks; i++) {
-        disk.write(fs_offset_inode_block + i, reinterpret_cast<data*>(block.data()), disk.get_block_size());
+        disk.write(fs_offset_inode_block + i, cast_to_data(block.data()), disk.get_block_size());
     }
 
     disk.unmount();
@@ -155,7 +105,7 @@ void FileSystem::format(Disk& disk) {
 
 uint32_t FileSystem::calc_mb_checksum(super_block& MB) {
     const uint8_t xor_word[] = {0xFE, 0xED, 0xC0, 0xDE};
-    uint8_t* raw_data = reinterpret_cast<data*>(&MB);
+    uint8_t* raw_data = cast_to_data(&MB);
     uint8_t checksum[fs_data_row_size] = {};
 
     fsize mb_size = meta_fragm_size - sizeof(MB.checksum);
