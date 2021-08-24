@@ -32,7 +32,8 @@ TEST_P(FileSystemTest, format) {
     EXPECT_EQ(MB[0].fs_ver_minor, fs_system_minor);
 
     for (auto i = 0; i < n_inode_blocks; i++) {
-        n_read = disk.read(inode_block_to_addr(i), r_data.data(), block_size);
+        address block_n = i / n_meta_blocks_in_block + fs_offset_inode_block;
+        n_read = disk.read(block_n, r_data.data(), block_size);
         ASSERT_EQ(n_read, block_size);
 
         for (auto j = 0; j < block_size / meta_fragm_size; j++) {

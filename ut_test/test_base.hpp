@@ -65,11 +65,7 @@ class TestBaseFileSystem : public TestBaseDisk {
    protected:
     super_block MB;
     FileSystem file_system;
-
-    address data_block_to_addr(address block_n) { return get_data_block_offset() + block_n; }
-    address inode_block_to_addr(address block_n) { return fs_offset_inode_block + block_n; }
-
-    address get_data_block_offset() { return fs_offset_inode_block + MB.n_inode_blocks; }
+    fsize n_meta_blocks_in_block = block_size / meta_fragm_size;
 
    public:
     TestBaseFileSystem() : TestBaseDisk(), file_system(disk) {
