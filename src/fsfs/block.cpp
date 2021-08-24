@@ -1,36 +1,35 @@
-#include "data_block.hpp"
+#include "block.hpp"
 
 #include <cstring>
 
 namespace FSFS {
-DataBlock::DataBlock(Disk& disk, const super_block& MB) : disk(disk), MB(MB) {
+Block::Block(Disk& disk, const super_block& MB) : disk(disk), MB(MB) {
     disk.mount();
     reinit();
 }
 
-void DataBlock::reinit() {
+void Block::reinit() {
     casched_block = fs_nullptr;
     rwbuffer.resize(MB.block_size);
 }
 
-DataBlock::~DataBlock() { disk.unmount(); }
+Block::~Block() { disk.unmount(); }
 
-address DataBlock::read_block(address block_n) {
-    address block_addr = block_n + fs_offset_inode_block + MB.n_inode_blocks;
-    if (block_addr == casched_block) {
+address Block::read_block(address block_n) {
+    if (block_n == casched_block) {
         return block_n;
     }
 
-    auto n_read = disk.read(block_addr, rwbuffer.data(), MB.block_size);
+    auto n_read = disk.read(block_n, rwbuffer.data(), MB.block_size);
     if (n_read != MB.block_size) {
         throw std::runtime_error("Error while read operaion.");
     }
-    casched_block = block_addr;
+    casched_block = block_n;
 
     return block_n;
 }
 
-fsize DataBlock::write(address block_n, const data* wdata, fsize offset, fsize length) {
+fsize Block::write(address block_n, const data* wdata, fsize offset, fsize length) {
     if (block_n >= MB.n_data_blocks || block_n < 0) {
         throw std::invalid_argument("Invalid data block number.");
     }
@@ -61,7 +60,7 @@ fsize DataBlock::write(address block_n, const data* wdata, fsize offset, fsize l
     return length;
 }
 
-fsize DataBlock::read(address block_n, data* rdata, fsize offset, fsize length) {
+fsize Block::read(address block_n, data* rdata, fsize offset, fsize length) {
     if (block_n >= MB.n_data_blocks || block_n < 0) {
         throw std::invalid_argument("Invalid data block number.");
     }
@@ -85,5 +84,34 @@ fsize DataBlock::read(address block_n, data* rdata, fsize offset, fsize length) 
     read_block(block_n);
     std::memcpy(rdata, rwbuffer.data() + real_offset, length);
     return length;
+}
+
+address Block::data_n_to_block_n(address data_n) {
+    if (data_n >= MB.n_data_blocks || data_n < 0) {
+        throw std::invalid_argument("Invalid data block number.");
+    }
+
+    return data_n + MB.n_inode_blocks + fs_offset_inode_block;
+}
+
+address Block::inode_n_to_block_n(address inode_n) {
+    if (inode_n >= MB.n_inode_blocks || inode_n < 0) {
+        throw std::invalid_argument("Invalid inode block number.");
+    }
+
+    return inode_n / get_n_inodes_in_block() + fs_offset_inode_block;
+}
+
+fsize Block::get_n_inodes_in_block() { return MB.block_size / meta_fragm_size; }
+
+fsize Block::get_n_addreses_in_block() { return MB.block_size / sizeof(address); }
+
+fsize Block::get_block_size() { return MB.block_size; };
+
+fsize Block::bytes_to_blocks(fsize length) {
+    length = std::max(0, length);
+    fsize n_ptrs_used = length / MB.block_size;
+    n_ptrs_used += length % MB.block_size ? 1 : 0;
+    return n_ptrs_used;
 }
 }
