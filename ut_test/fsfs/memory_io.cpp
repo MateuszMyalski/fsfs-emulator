@@ -88,17 +88,6 @@ class MemoryIOTest : public ::testing::TestWithParam<fsize>, public TestBaseFile
     }
 };
 
-TEST_P(MemoryIOTest, bytes_to_block) {
-    EXPECT_EQ(io->bytes_to_blocks(0), 0);
-    EXPECT_EQ(io->bytes_to_blocks(-1), 0);
-    EXPECT_EQ(io->bytes_to_blocks(MB.block_size / 2), 1);
-    EXPECT_EQ(io->bytes_to_blocks(MB.block_size), 1);
-    EXPECT_EQ(io->bytes_to_blocks(MB.block_size + 1), 2);
-    EXPECT_EQ(io->bytes_to_blocks(MB.block_size + MB.block_size / 2), 2);
-    EXPECT_EQ(io->bytes_to_blocks(2 * MB.block_size), 2);
-    EXPECT_EQ(io->bytes_to_blocks(2 * MB.block_size + 1), 3);
-}
-
 TEST_P(MemoryIOTest, scan_blocks) {
     for (const auto inode_n : used_inode_blocks) {
         EXPECT_TRUE(io->get_inode_bitmap().get_block_status(inode_n));

@@ -7,7 +7,7 @@ class DataBlockTest : public ::testing::TestWithParam<fsize>, public TestBaseFil
    protected:
     DataBlock* data_block;
     address data_n = 0;
-    address block_n = data_block_to_addr(0);
+    address block_n = fs_offset_inode_block + MB.n_inode_blocks + data_n;
     DataBufferType wdata;
     DataBufferType rdata;
 
@@ -20,6 +20,34 @@ class DataBlockTest : public ::testing::TestWithParam<fsize>, public TestBaseFil
     }
     void TearDown() override { delete data_block; }
 };
+
+TEST_P(DataBlockTest, data_n_to_block_n_throw_invalid_block) {
+    EXPECT_THROW(data_block->data_n_to_block_n(MB.n_data_blocks), std::invalid_argument);
+    EXPECT_THROW(data_block->data_n_to_block_n(-1), std::invalid_argument);
+}
+
+TEST_P(DataBlockTest, inode_n_to_block_n_throw_invalid_block) {
+    EXPECT_THROW(data_block->inode_n_to_block_n(MB.n_inode_blocks), std::invalid_argument);
+    EXPECT_THROW(data_block->inode_n_to_block_n(-1), std::invalid_argument);
+}
+
+TEST_P(DataBlockTest, inode_n_to_block_n) {
+    fsize n_meta_blocks_in_block = block_size / meta_fragm_size;
+
+    EXPECT_EQ(data_block->inode_n_to_block_n(0), fs_offset_inode_block);
+    EXPECT_EQ(data_block->inode_n_to_block_n(1), fs_offset_inode_block);
+    EXPECT_EQ(data_block->inode_n_to_block_n(n_meta_blocks_in_block - 1), fs_offset_inode_block);
+    EXPECT_EQ(data_block->inode_n_to_block_n(n_meta_blocks_in_block), fs_offset_inode_block + 1);
+
+    EXPECT_EQ(data_block->inode_n_to_block_n(MB.n_inode_blocks - 1),
+              (MB.n_inode_blocks - 1) / n_meta_blocks_in_block + fs_offset_inode_block);
+}
+
+TEST_P(DataBlockTest, data_n_to_block_n) {
+    EXPECT_EQ(data_block->data_n_to_block_n(0), fs_offset_inode_block + MB.n_inode_blocks);
+    EXPECT_EQ(data_block->data_n_to_block_n(MB.n_inode_blocks - 1),
+              (MB.n_inode_blocks - 1) + MB.n_inode_blocks + fs_offset_inode_block);
+}
 
 TEST_P(DataBlockTest, write_throw_invalid_block_number) {
     data dummy_data = 0x00;
@@ -114,6 +142,17 @@ TEST_P(DataBlockTest, read_with_offset) {
 
     EXPECT_EQ(rdata[0], wdata[wdata.size() - 3]);
     EXPECT_EQ(rdata[1], wdata[wdata.size() - 2]);
+}
+
+TEST_P(DataBlockTest, bytes_to_block) {
+    EXPECT_EQ(data_block->bytes_to_blocks(0), 0);
+    EXPECT_EQ(data_block->bytes_to_blocks(-1), 0);
+    EXPECT_EQ(data_block->bytes_to_blocks(MB.block_size / 2), 1);
+    EXPECT_EQ(data_block->bytes_to_blocks(MB.block_size), 1);
+    EXPECT_EQ(data_block->bytes_to_blocks(MB.block_size + 1), 2);
+    EXPECT_EQ(data_block->bytes_to_blocks(MB.block_size + MB.block_size / 2), 2);
+    EXPECT_EQ(data_block->bytes_to_blocks(2 * MB.block_size), 2);
+    EXPECT_EQ(data_block->bytes_to_blocks(2 * MB.block_size + 1), 3);
 }
 
 INSTANTIATE_TEST_SUITE_P(BlockSize, DataBlockTest, testing::ValuesIn(valid_block_sizes));
