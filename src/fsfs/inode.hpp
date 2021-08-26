@@ -1,50 +1,32 @@
 #ifndef FSFS_INODE_HPP
 #define FSFS_INODE_HPP
-#include <vector>
-
-#include "common/types.hpp"
-#include "data_structs.hpp"
-#include "disk-emulator/disk.hpp"
-
+#include "indirect_inode.hpp"
 namespace FSFS {
 class Inode {
    private:
-    Disk& disk;
-    const super_block& MB;
-    address n_inodes_in_block;
+    address loaded_inode_n;
 
-    std::vector<data> rwbuffer;
-    inode_block* inodes;
-    struct {
-        address nth_block;
-        address low_block_n;
-        address high_block_n;
+    IndirectInode indirect_inode;
+    inode_block inode;
+    inode_block inode_buf;
+    std::forward_list<address> ptrs_to_allocate;
 
-        void reset() {
-            nth_block = fs_nullptr;
-            low_block_n = fs_nullptr;
-            high_block_n = fs_nullptr;
-        }
-
-        inline bool is_valid() {
-            return (nth_block == fs_nullptr) || (low_block_n == fs_nullptr) || (high_block_n == fs_nullptr);
-        }
-
-        inline bool is_cashed(address inode_n) { return (inode_n < high_block_n) && (inode_n >= low_block_n); }
-    } casch_info;
-
-    address read_inode(address inode_n);
+    void load_direct(address inode_n, Block& data_block);
 
    public:
-    Inode(Disk& disk, const super_block& MB);
-    ~Inode();
-    const inode_block& get(address inode_n);
-    inode_block& update(address inode_n);
+    Inode();
 
-    address alloc(address inode_n);
-    void reinit();
-    void commit();
+    inode_block const& meta() const;
+    inode_block& meta();
+    address const& operator[](address ptr_n) const;
+    void add_data(address new_data_n);
+    void alloc_new(address inode_n);
+
+    void clear();
+    void load(address inode_n, Block& data_block);
+    void commit(Block& data_block);
 };
+
 }
 
 #endif

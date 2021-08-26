@@ -37,7 +37,8 @@ class TestBaseBasic : public testing::WithParamInterface<fsize> {
         return std::memcmp(data_lhs.data(), data_rhs.data(), data_lhs.size()) == 0;
     }
 
-    bool cmp_data(const data* data_lhs, const data* data_rhs, size_t length) {
+    template <typename T>
+    bool cmp_data(const T* data_lhs, const T* data_rhs, size_t length) {
         return std::memcmp(data_lhs, data_rhs, length) == 0;
     }
 };
