@@ -66,7 +66,8 @@ class TestBaseFileSystem : public TestBaseDisk {
    protected:
     super_block MB;
     FileSystem file_system;
-    fsize n_meta_blocks_in_block = block_size / meta_fragm_size;
+    const fsize n_meta_blocks_in_block = block_size / meta_fragm_size;
+    const fsize n_indirect_ptrs_in_block = block_size / sizeof(address);
 
    public:
     TestBaseFileSystem() : TestBaseDisk(), file_system(disk) {
