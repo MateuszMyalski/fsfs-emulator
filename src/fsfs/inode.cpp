@@ -18,7 +18,7 @@ inode_block& Inode::meta() {
     return inode_buf;
 }
 
-const address& Inode::operator[](address ptr_n) const {
+address Inode::ptr(address ptr_n) const {
     if (loaded_inode_n == fs_nullptr) {
         throw std::runtime_error("Inode not initialized.");
     }
@@ -27,7 +27,7 @@ const address& Inode::operator[](address ptr_n) const {
         return inode.block_ptr[ptr_n];
     }
 
-    return indirect_inode[ptr_n - meta_inode_ptr_len];
+    return indirect_inode.ptr(ptr_n - meta_inode_ptr_len);
 }
 
 void Inode::add_data(address new_data_n) { ptrs_to_allocate.push_front(new_data_n); }

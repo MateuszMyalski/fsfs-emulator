@@ -55,7 +55,7 @@ TEST(InodeTest, meta_throw_not_initialized) {
 
 TEST(InodeTest, get_ptr_operator_throw_not_initialized) {
     Inode inode;
-    EXPECT_THROW(inode[0], std::runtime_error);
+    EXPECT_THROW(inode.ptr(0), std::runtime_error);
 }
 
 TEST_P(InodeTest, load_and_check_meta) {
@@ -128,6 +128,7 @@ TEST_P(InodeTest, add_data_clear_load_direct_inode) {
     EXPECT_TRUE(cmp_data(ref_inode1.block_ptr, inode->meta().block_ptr, sizeof(ref_inode1.block_ptr)));
 
     // TODO add overflow to indirect
+    // TODO check [] operator
 }
 
 INSTANTIATE_TEST_SUITE_P(BlockSize, InodeTest, testing::ValuesIn(valid_block_sizes));

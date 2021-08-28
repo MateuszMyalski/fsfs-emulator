@@ -52,7 +52,7 @@ class IndirectInodeTest : public ::testing::TestWithParam<fsize>, public TestBas
 TEST_P(IndirectInodeTest, load_and_check) {
     indirect_inode->load(*data_block);
     for (size_t i = 0; i < ptrs.size(); i++) {
-        EXPECT_EQ(ptrs[i], (*indirect_inode)[i]);
+        EXPECT_EQ(ptrs[i], indirect_inode->ptr(i));
     }
 }
 

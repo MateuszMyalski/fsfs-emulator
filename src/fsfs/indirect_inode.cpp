@@ -4,11 +4,14 @@ namespace FSFS {
 
 IndirectInode::IndirectInode(const inode_block& inode) : inode(inode) { clear(); }
 
-const address& IndirectInode::operator[](address ptr_n) const { return indirect_ptrs_list[ptr_n]; }
+address IndirectInode::ptr(address ptr_n) const { return indirect_ptrs_list[ptr_n]; }
 
 void IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLList& ptrs_to_allocate) {}
 
-void IndirectInode::clear() { indirect_ptrs_list.clear(); }
+void IndirectInode::clear() {
+    last_indirect_block_addr = fs_nullptr;
+    indirect_ptrs_list.clear();
+}
 
 void IndirectInode::load(Block& data_block) {
     fsize n_ptrs = data_block.bytes_to_blocks(inode.file_len) - meta_inode_ptr_len;
@@ -25,10 +28,10 @@ void IndirectInode::load(Block& data_block) {
     fsize n_indirect_blocks = n_ptrs / (data_block.get_n_addreses_in_block() - 1);
     for (address nth_block = 0; nth_block < n_indirect_blocks; nth_block++) {
         data* data_indirect_p = cast_to_data(&indirect_ptrs_list[n_read_ptrs]);
-        indirect_block_ptr = data_block.data_n_to_block_n(indirect_block_ptr);
+        fsize addr = data_block.data_n_to_block_n(indirect_block_ptr);
 
-        data_block.read(indirect_block_ptr, data_indirect_p, 0, ptrs_length);
-        data_block.read(indirect_block_ptr, cast_to_data(&indirect_block_ptr), ptrs_length, sizeof(address));
+        data_block.read(addr, data_indirect_p, 0, ptrs_length);
+        data_block.read(addr, cast_to_data(&indirect_block_ptr), ptrs_length, sizeof(address));
 
         n_read_ptrs += (data_block.get_n_addreses_in_block() - 1);
     }
@@ -36,9 +39,11 @@ void IndirectInode::load(Block& data_block) {
     if (n_read_ptrs < n_ptrs) {
         data* data_indirect_p = cast_to_data(&indirect_ptrs_list[n_read_ptrs]);
         fsize n_ptrs_left = n_ptrs - n_read_ptrs;
-        indirect_block_ptr = data_block.data_n_to_block_n(indirect_block_ptr);
+        fsize addr = data_block.data_n_to_block_n(indirect_block_ptr);
 
-        data_block.read(indirect_block_ptr, data_indirect_p, 0, n_ptrs_left * sizeof(address));
+        data_block.read(addr, data_indirect_p, 0, n_ptrs_left * sizeof(address));
     }
+
+    last_indirect_block_addr = indirect_block_ptr;
 }
 }

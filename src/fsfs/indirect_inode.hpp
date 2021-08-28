@@ -19,7 +19,7 @@ class IndirectInode {
    public:
     IndirectInode(const inode_block& inode);
 
-    const address& operator[](address ptr_n) const;
+    address ptr(address ptr_n) const;
 
     void clear();
     void load(Block& data_block);
