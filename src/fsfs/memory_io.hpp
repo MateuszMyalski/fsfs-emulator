@@ -1,8 +1,8 @@
 #ifndef FSFS_MEMORY_IO_HPP
 #define FSFS_MEMORY_IO_HPP
+#include "block.hpp"
 #include "block_bitmap.hpp"
 #include "common/types.hpp"
-#include "data_block.hpp"
 #include "data_structs.hpp"
 #include "disk-emulator/disk.hpp"
 #include "indirect_inode.hpp"
@@ -15,8 +15,7 @@ class MemoryIO {
     super_block MB;
     BlockBitmap inode_bitmap;
     BlockBitmap data_bitmap;
-    DataBlock data_block;
-    IndirectInode iinode;
+    Block data_block;
     Inode inode;
 
     void set_data_blocks_status(address inode_n, bool status);
@@ -42,8 +41,7 @@ class MemoryIO {
     }
 
    public:
-    MemoryIO(Disk& disk)
-        : disk(disk), MB(), inode_bitmap(), data_bitmap(), data_block(disk, MB), iinode(disk, MB), inode(disk, MB){};
+    MemoryIO(Disk& disk) : disk(disk), MB(), inode_bitmap(), data_bitmap(), data_block(disk, MB), inode(){};
 
     void init(const super_block& MB);
 

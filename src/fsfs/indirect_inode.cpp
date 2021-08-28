@@ -8,21 +8,17 @@ const address& IndirectInode::operator[](address ptr_n) const { return indirect_
 
 void IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLList& ptrs_to_allocate) {}
 
-void IndirectInode::clear() {
-    indirect_ptrs_list.resize(0);
-    indirect_ptrs_list.clear();
-}
+void IndirectInode::clear() { indirect_ptrs_list.clear(); }
 
 void IndirectInode::load(Block& data_block) {
     fsize n_ptrs = data_block.bytes_to_blocks(inode.file_len) - meta_inode_ptr_len;
-    if (n_ptrs <= meta_inode_ptr_len || inode.indirect_inode_ptr != fs_nullptr) {
+    if (n_ptrs <= meta_inode_ptr_len || inode.indirect_inode_ptr == fs_nullptr) {
         return;
     }
 
     indirect_ptrs_list.resize(n_ptrs);
-    indirect_ptrs_list.clear();
 
-    address indirect_block_ptr = data_block.data_n_to_block_n(inode.indirect_inode_ptr);
+    address indirect_block_ptr = inode.indirect_inode_ptr;
     fsize ptrs_length = data_block.get_block_size() - sizeof(address);
 
     fsize n_read_ptrs = 0;
