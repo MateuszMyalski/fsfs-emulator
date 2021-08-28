@@ -1,10 +1,12 @@
 #include "fsfs/inode.hpp"
 
+#include "fsfs/block_bitmap.hpp"
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
 class InodeTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
    protected:
+    BlockBitmap data_bitmap;
     Block *data_block;
     Inode *inode;
 
@@ -15,6 +17,7 @@ class InodeTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSys
 
    public:
     void SetUp() override {
+        data_bitmap.init(MB.n_data_blocks);
         data_block = new Block(disk, MB);
 
         const char name[] = "Test inode";
@@ -90,7 +93,7 @@ TEST_P(InodeTest, alloc_new_commit_clear_load_direct_inode) {
     std::memcpy(ref_inode1.block_ptr, inode->meta().block_ptr, sizeof(ref_inode1.block_ptr));
     std::memcpy(ref_inode1.file_name, inode->meta().file_name, meta_file_name_len);
 
-    inode->commit(*data_block);
+    inode->commit(*data_block, data_bitmap);
     inode->clear();
     inode->load(inode_n, *data_block);
 
@@ -114,7 +117,7 @@ TEST_P(InodeTest, add_data_clear_load_direct_inode) {
         inode->add_data(ref_inode1.block_ptr[i]);
     }
 
-    inode->commit(*data_block);
+    inode->commit(*data_block, data_bitmap);
     inode->clear();
     inode->load(inode_n, *data_block);
 

@@ -2,7 +2,7 @@
 
 #include <cstring>
 namespace FSFS {
-Inode::Inode() : loaded_inode_n(fs_nullptr) { clear(); }
+Inode::Inode() : loaded_inode_n(fs_nullptr), indirect_inode(inode) { clear(); }
 
 inode_block const& Inode::meta() const {
     if (loaded_inode_n == fs_nullptr) {
@@ -18,7 +18,7 @@ inode_block& Inode::meta() {
     return inode_buf;
 }
 
-address const& Inode::operator[](address ptr_n) const {
+const address& Inode::operator[](address ptr_n) const {
     if (loaded_inode_n == fs_nullptr) {
         throw std::runtime_error("Inode not initialized.");
     }
@@ -37,10 +37,8 @@ void Inode::load_direct(address inode_n, Block& data_block) {
     fsize offset = inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size;
     data* data_inode_p = cast_to_data(&inode);
 
-    fsize n_read = data_block.read(block_n, data_inode_p, offset, meta_fragm_size);
-    if (n_read != meta_fragm_size) {
-        throw std::runtime_error("Error while read operation.");
-    }
+    data_block.read(block_n, data_inode_p, offset, meta_fragm_size);
+
     memcpy(&inode_buf, &inode, sizeof(inode_block));
 }
 
@@ -50,11 +48,7 @@ void Inode::load(address inode_n, Block& data_block) {
     }
 
     load_direct(inode_n, data_block);
-
-    fsize n_ptrs = data_block.bytes_to_blocks(inode.file_len) - meta_inode_ptr_len;
-    if (n_ptrs > 0 && inode.indirect_inode_ptr != fs_nullptr) {
-        indirect_inode.load(inode.indirect_inode_ptr, data_block, n_ptrs);
-    }
+    indirect_inode.load(data_block);
 
     loaded_inode_n = inode_n;
 }
@@ -80,7 +74,7 @@ void Inode::alloc_new(address inode_n) {
     }
 }
 
-void Inode::commit(Block& data_block) {
+void Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
     if (loaded_inode_n == fs_nullptr) {
         return;
     }
@@ -89,28 +83,20 @@ void Inode::commit(Block& data_block) {
     fsize offset = loaded_inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size;
     data* data_inode_p = cast_to_data(&inode_buf);
 
-    if (!ptrs_to_allocate.empty()) {
-        fsize ptrs_used = data_block.bytes_to_blocks(inode.file_len);
+    ptrs_to_allocate.reverse();
+    fsize ptrs_used = data_block.bytes_to_blocks(inode.file_len);
+
+    while (!ptrs_to_allocate.empty()) {
         if (ptrs_used >= meta_inode_ptr_len) {
-            // TODO pass to indirect
+            indirect_inode.commit(data_block, data_bitmap, ptrs_to_allocate);
+            break;
         }
-
-        ptrs_to_allocate.reverse();
-        while (!ptrs_to_allocate.empty()) {
-            if (ptrs_used >= meta_inode_ptr_len) {
-                // TODO pass to indirect
-            }
-            inode_buf.block_ptr[ptrs_used] = ptrs_to_allocate.front();
-            ptrs_to_allocate.pop_front();
-            ptrs_used++;
-        }
+        inode_buf.block_ptr[ptrs_used] = ptrs_to_allocate.front();
+        ptrs_to_allocate.pop_front();
+        ptrs_used++;
     }
 
-    fsize n_written = data_block.write(block_n, data_inode_p, offset, meta_fragm_size);
-    if (n_written != meta_fragm_size) {
-        throw std::runtime_error("Error while read operation.");
-    }
-
-    indirect_inode.commit(data_block);
+    data_block.write(block_n, data_inode_p, offset, meta_fragm_size);
+    clear();
 }
 }
