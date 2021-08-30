@@ -55,10 +55,38 @@ TEST_P(IndirectInodeTest, load_and_check) {
         EXPECT_EQ(ptrs[i], indirect_inode->ptr(i));
     }
 }
+TEST_P(IndirectInodeTest, add_data_and_commit) {
+    PtrsLList new_ptrs_list;
+    BlockBitmap data_bitmap;
+    data_bitmap.init(n_blocks);
+    auto n_new_ptrs = (n_indirect_ptrs_in_block - 1) * 2;
+    indirect_inode->load(*data_block);
+
+    std::vector<address> new_ptrs(n_new_ptrs);
+    fill_dummy(new_ptrs);
+
+    new_ptrs_list.insert_after(new_ptrs_list.before_begin(), new_ptrs.begin(), new_ptrs.end());
+    indirect_inode->commit(*data_block, data_bitmap, new_ptrs_list);
+
+    inode.file_len += n_new_ptrs * block_size;
+    indirect_inode->load(*data_block);
+    for (size_t i = 0; i < ptrs.size(); i++) {
+        EXPECT_EQ(ptrs[i], indirect_inode->ptr(i));
+    }
+    for (size_t i = 0; i < new_ptrs.size(); i++) {
+        EXPECT_EQ(new_ptrs[i], indirect_inode->ptr(ptrs.size() + i));
+    }
+}
+
+TEST_P(InodeTest, commit_throw_no_indirect_base_address) {}
+
+TEST_P(IndirectInodeTest, add_data_and_commit_with_empty_list) {}
+
+TEST_P(IndirectInodeTest, add_data_and_commit_with_no_free_space) {}
+
+TEST_P(IndirectInodeTest, add_data_to_no_indirect_throw) {}
 
 TEST_P(IndirectInodeTest, load_clear_and_check) {}
-
-TEST_P(IndirectInodeTest, add_data_and_commit) {}
 
 INSTANTIATE_TEST_SUITE_P(BlockSize, IndirectInodeTest, testing::ValuesIn(valid_block_sizes));
 }

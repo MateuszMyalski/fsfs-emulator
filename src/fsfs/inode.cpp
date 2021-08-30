@@ -38,7 +38,6 @@ void Inode::load_direct(address inode_n, Block& data_block) {
     data* data_inode_p = cast_to_data(&inode);
 
     data_block.read(block_n, data_inode_p, offset, meta_fragm_size);
-
     memcpy(&inode_buf, &inode, sizeof(inode_block));
 }
 
@@ -88,6 +87,14 @@ void Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
 
     while (!ptrs_to_allocate.empty()) {
         if (ptrs_used >= meta_inode_ptr_len) {
+            fsize new_block_n = data_bitmap.next_free(0);
+            if (new_block_n == fs_nullptr) {
+                // TODO error handling
+                return;
+            }
+            data_bitmap.set_block(new_block_n, 1);
+            meta().indirect_inode_ptr = new_block_n;
+            inode.indirect_inode_ptr = new_block_n;
             indirect_inode.commit(data_block, data_bitmap, ptrs_to_allocate);
             break;
         }

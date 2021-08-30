@@ -131,5 +131,28 @@ TEST_P(InodeTest, add_data_clear_load_direct_inode) {
     // TODO check [] operator
 }
 
+TEST_P(InodeTest, add_data_clear_load_indirect_inode) {
+    constexpr address indirect_ptr = 123;
+    address inode_n = n_meta_blocks_in_block * 2 + 1;
+    ASSERT_EQ(ref_inode1.file_len, block_size * meta_inode_ptr_len);
+
+    inode->alloc_new(inode_n);
+    inode->meta().type = ref_inode1.type;
+    inode->meta().file_len = ref_inode1.file_len;
+    inode->meta().indirect_inode_ptr = ref_inode1.indirect_inode_ptr;
+    std::memcpy(ref_inode1.file_name, inode->meta().file_name, meta_file_name_len);
+    for (auto i = 0; i < meta_inode_ptr_len; i++) {
+        inode->add_data(ref_inode1.block_ptr[i]);
+    }
+    inode->add_data(indirect_ptr);
+
+    inode->commit(*data_block, data_bitmap);
+    inode->clear();
+    inode->load(inode_n, *data_block);
+    EXPECT_EQ(inode->ptr(meta_inode_ptr_len), indirect_ptr);
+}
+
+TEST_P(InodeTest, add_data_clear_load_indirect_inode_with_no_free_space) {}
+
 INSTANTIATE_TEST_SUITE_P(BlockSize, InodeTest, testing::ValuesIn(valid_block_sizes));
 }
