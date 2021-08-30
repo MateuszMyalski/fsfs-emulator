@@ -57,19 +57,17 @@ TEST_P(IndirectInodeTest, load_and_check) {
 }
 TEST_P(IndirectInodeTest, add_data_and_commit) {
     PtrsLList new_ptrs_list;
-    BlockBitmap data_bitmap;
-    data_bitmap.init(n_blocks);
-    auto n_new_ptrs = (n_indirect_ptrs_in_block - 1) * 2;
+    BlockBitmap data_bitmap(n_blocks);
     indirect_inode->load(*data_block);
 
-    std::vector<address> new_ptrs(n_new_ptrs);
+    std::vector<address> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
     fill_dummy(new_ptrs);
-
     new_ptrs_list.insert_after(new_ptrs_list.before_begin(), new_ptrs.begin(), new_ptrs.end());
-    indirect_inode->commit(*data_block, data_bitmap, new_ptrs_list);
 
-    inode.file_len += n_new_ptrs * block_size;
+    indirect_inode->commit(*data_block, data_bitmap, new_ptrs_list);
+    inode.file_len += new_ptrs.size() * block_size;
     indirect_inode->load(*data_block);
+
     for (size_t i = 0; i < ptrs.size(); i++) {
         EXPECT_EQ(ptrs[i], indirect_inode->ptr(i));
     }
@@ -78,15 +76,24 @@ TEST_P(IndirectInodeTest, add_data_and_commit) {
     }
 }
 
-TEST_P(InodeTest, commit_throw_no_indirect_base_address) {}
+TEST_P(IndirectInodeTest, commit_throw_no_indirect_base_address) {
+    PtrsLList new_ptrs_list;
+    BlockBitmap data_bitmap(n_blocks);
 
-TEST_P(IndirectInodeTest, add_data_and_commit_with_empty_list) {}
+    indirect_inode->load(*data_block);
+    inode.indirect_inode_ptr = fs_nullptr;
+    EXPECT_THROW(indirect_inode->commit(*data_block, data_bitmap, new_ptrs_list), std::runtime_error);
+}
+
+TEST_P(IndirectInodeTest, commit_with_empty_list) {
+    PtrsLList new_ptrs_list;
+    BlockBitmap data_bitmap(n_blocks);
+
+    indirect_inode->load(*data_block);
+    EXPECT_NO_THROW(indirect_inode->commit(*data_block, data_bitmap, new_ptrs_list));
+}
 
 TEST_P(IndirectInodeTest, add_data_and_commit_with_no_free_space) {}
-
-TEST_P(IndirectInodeTest, add_data_to_no_indirect_throw) {}
-
-TEST_P(IndirectInodeTest, load_clear_and_check) {}
 
 INSTANTIATE_TEST_SUITE_P(BlockSize, IndirectInodeTest, testing::ValuesIn(valid_block_sizes));
 }
