@@ -126,9 +126,6 @@ TEST_P(InodeTest, add_data_clear_load_direct_inode) {
     EXPECT_EQ(ref_inode1.indirect_inode_ptr, inode->meta().indirect_inode_ptr);
     EXPECT_STREQ(ref_inode1.file_name, inode->meta().file_name);
     EXPECT_TRUE(cmp_data(ref_inode1.block_ptr, inode->meta().block_ptr, sizeof(ref_inode1.block_ptr)));
-
-    // TODO add overflow to indirect
-    // TODO check [] operator
 }
 
 TEST_P(InodeTest, add_data_clear_load_indirect_inode) {
