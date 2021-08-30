@@ -25,6 +25,7 @@ void IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLLis
 
     fsize n_used_indirect_ptrs = std::max(data_block.bytes_to_blocks(inode.file_len) - meta_inode_ptr_len, 0);
     fsize n_new_ptrs = std::distance(ptrs_to_allocate.begin(), ptrs_to_allocate.end());
+
     indirect_ptrs_list.resize(indirect_ptrs_list.size() + n_new_ptrs);
     for (auto i = 0; !ptrs_to_allocate.empty(); i++) {
         indirect_ptrs_list[n_used_indirect_ptrs + i] = ptrs_to_allocate.front();
@@ -32,14 +33,15 @@ void IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLLis
     }
 
     fsize last_ptr_in_block = n_used_indirect_ptrs % (data_block.get_n_addreses_in_block() - 1);
-    data* indirect_ptrs_list_p = cast_to_data(&indirect_ptrs_list[n_used_indirect_ptrs]);
-
-    fsize free_ptrs_slots = (data_block.get_n_addreses_in_block() - 1) - last_ptr_in_block;
-    fsize n_ptrs_to_write = std::min(free_ptrs_slots, n_new_ptrs);
+    fsize n_free_slots = (data_block.get_n_addreses_in_block() - 1) - last_ptr_in_block;
+    fsize n_ptrs_to_write = std::min(n_free_slots, n_new_ptrs);
     if (n_ptrs_to_write > 0) {
-        fsize addr = data_block.data_n_to_block_n(last_indirect_block_n);
+        data* indirect_ptrs_list_p = cast_to_data(&indirect_ptrs_list[n_used_indirect_ptrs]);
+        address addr = data_block.data_n_to_block_n(last_indirect_block_n);
+
         data_block.write(addr, indirect_ptrs_list_p, last_ptr_in_block * sizeof(address),
                          n_ptrs_to_write * sizeof(address));
+
         n_new_ptrs -= n_ptrs_to_write;
         n_used_indirect_ptrs += n_ptrs_to_write;
     }
@@ -50,14 +52,16 @@ void IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLLis
             // TODO Error handling
             return;
         }
-        fsize addr = data_block.data_n_to_block_n(last_indirect_block_n);
         data_bitmap.set_block(new_block_addr, 1);
-        data_block.write(addr, cast_to_data(&new_block_addr), -static_cast<fsize>(sizeof(address)), sizeof(address));
+        address addr = data_block.data_n_to_block_n(last_indirect_block_n);
         last_indirect_block_n = new_block_addr;
 
-        indirect_ptrs_list_p = cast_to_data(&indirect_ptrs_list[n_used_indirect_ptrs]);
+        data_block.write(addr, cast_to_data(&new_block_addr), -static_cast<fsize>(sizeof(address)), sizeof(address));
+
+        data* indirect_ptrs_list_p = cast_to_data(&indirect_ptrs_list[n_used_indirect_ptrs]);
         n_ptrs_to_write = std::min(data_block.get_n_addreses_in_block() - 1, n_new_ptrs);
         addr = data_block.data_n_to_block_n(last_indirect_block_n);
+
         data_block.write(addr, cast_to_data(indirect_ptrs_list_p), 0, n_ptrs_to_write * sizeof(address));
 
         n_new_ptrs -= n_ptrs_to_write;

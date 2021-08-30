@@ -87,7 +87,7 @@ void Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
 
     while (!ptrs_to_allocate.empty()) {
         if (ptrs_used >= meta_inode_ptr_len) {
-            fsize new_block_n = data_bitmap.next_free(0);
+            address new_block_n = data_bitmap.next_free(0);
             if (new_block_n == fs_nullptr) {
                 // TODO error handling
                 return;
