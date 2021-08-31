@@ -27,7 +27,7 @@ class Inode {
 
     void clear();
     void load(address inode_n, Block& data_block);
-    void commit(Block& data_block, BlockBitmap& data_bitmap);
+    fsize commit(Block& data_block, BlockBitmap& data_bitmap);
 };
 }
 

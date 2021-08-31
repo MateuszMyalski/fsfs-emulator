@@ -73,9 +73,9 @@ void Inode::alloc_new(address inode_n) {
     }
 }
 
-void Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
+fsize Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
     if (loaded_inode_n == fs_nullptr) {
-        return;
+        return 0;
     }
 
     address block_n = data_block.inode_n_to_block_n(loaded_inode_n);
@@ -84,26 +84,30 @@ void Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
 
     ptrs_to_allocate.reverse();
     fsize ptrs_used = data_block.bytes_to_blocks(inode.file_len);
+    fsize n_written = 0;
 
     while (!ptrs_to_allocate.empty()) {
         if (ptrs_used >= meta_inode_ptr_len) {
             address new_block_n = data_bitmap.next_free(0);
             if (new_block_n == fs_nullptr) {
-                // TODO error handling
-                return;
+                data_block.write(block_n, data_inode_p, offset, meta_fragm_size);
+                clear();
+                return n_written;
             }
             data_bitmap.set_block(new_block_n, 1);
             meta().indirect_inode_ptr = new_block_n;
             inode.indirect_inode_ptr = new_block_n;
-            indirect_inode.commit(data_block, data_bitmap, ptrs_to_allocate);
+            n_written += indirect_inode.commit(data_block, data_bitmap, ptrs_to_allocate);
             break;
         }
         inode_buf.block_ptr[ptrs_used] = ptrs_to_allocate.front();
         ptrs_to_allocate.pop_front();
         ptrs_used++;
+        n_written++;
     }
 
     data_block.write(block_n, data_inode_p, offset, meta_fragm_size);
     clear();
+    return n_written;
 }
 }

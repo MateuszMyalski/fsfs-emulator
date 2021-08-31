@@ -41,7 +41,17 @@ class InodeTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSys
                    meta_fragm_size);
 
         inode = new Inode();
+
+        ASSERT_EQ(ref_inode1.file_len, block_size * meta_inode_ptr_len);
     }
+
+    void update_meta_data(inode_block &inode_to_insert) {
+        inode->meta().type = inode_to_insert.type;
+        inode->meta().file_len = inode_to_insert.file_len;
+        inode->meta().indirect_inode_ptr = inode_to_insert.indirect_inode_ptr;
+        std::memcpy(inode_to_insert.file_name, inode->meta().file_name, meta_file_name_len);
+    }
+
     void TearDown() override {
         delete data_block;
         delete inode;
@@ -86,13 +96,12 @@ TEST_P(InodeTest, load_and_clear_throw_not_initialized) {
 
 TEST_P(InodeTest, alloc_new_commit_clear_load_direct_inode) {
     inode->alloc_new(test_inode_n);
-    inode->meta().type = ref_inode1.type;
-    inode->meta().file_len = ref_inode1.file_len;
-    inode->meta().indirect_inode_ptr = ref_inode1.indirect_inode_ptr;
+    update_meta_data(ref_inode1);
     std::memcpy(ref_inode1.block_ptr, inode->meta().block_ptr, sizeof(ref_inode1.block_ptr));
-    std::memcpy(ref_inode1.file_name, inode->meta().file_name, meta_file_name_len);
 
-    inode->commit(*data_block, data_bitmap);
+    auto n_written = inode->commit(*data_block, data_bitmap);
+    EXPECT_EQ(n_written, 0);
+
     inode->clear();
     inode->load(test_inode_n, *data_block);
 
@@ -104,18 +113,15 @@ TEST_P(InodeTest, alloc_new_commit_clear_load_direct_inode) {
 }
 
 TEST_P(InodeTest, add_data_clear_load_direct_inode) {
-    ASSERT_EQ(ref_inode1.file_len, block_size * meta_inode_ptr_len);
-
     inode->alloc_new(test_inode_n);
-    inode->meta().type = ref_inode1.type;
-    inode->meta().file_len = ref_inode1.file_len;
-    inode->meta().indirect_inode_ptr = ref_inode1.indirect_inode_ptr;
-    std::memcpy(ref_inode1.file_name, inode->meta().file_name, meta_file_name_len);
+    update_meta_data(ref_inode1);
     for (auto i = 0; i < meta_inode_ptr_len; i++) {
         inode->add_data(ref_inode1.block_ptr[i]);
     }
 
-    inode->commit(*data_block, data_bitmap);
+    auto n_written = inode->commit(*data_block, data_bitmap);
+    EXPECT_EQ(n_written, meta_inode_ptr_len);
+
     inode->clear();
     inode->load(test_inode_n, *data_block);
 
@@ -128,25 +134,37 @@ TEST_P(InodeTest, add_data_clear_load_direct_inode) {
 
 TEST_P(InodeTest, add_data_clear_load_indirect_inode) {
     constexpr address indirect_ptr = 123;
-    ASSERT_EQ(ref_inode1.file_len, block_size * meta_inode_ptr_len);
 
     inode->alloc_new(test_inode_n);
-    inode->meta().type = ref_inode1.type;
-    inode->meta().file_len = ref_inode1.file_len;
-    inode->meta().indirect_inode_ptr = ref_inode1.indirect_inode_ptr;
-    std::memcpy(ref_inode1.file_name, inode->meta().file_name, meta_file_name_len);
+    update_meta_data(ref_inode1);
     for (auto i = 0; i < meta_inode_ptr_len; i++) {
         inode->add_data(ref_inode1.block_ptr[i]);
     }
     inode->add_data(indirect_ptr);
 
-    inode->commit(*data_block, data_bitmap);
+    auto n_written = inode->commit(*data_block, data_bitmap);
+    EXPECT_EQ(n_written, meta_inode_ptr_len + 1);
+
     inode->clear();
     inode->load(test_inode_n, *data_block);
     EXPECT_EQ(inode->ptr(meta_inode_ptr_len), indirect_ptr);
 }
 
-TEST_P(InodeTest, add_data_clear_load_indirect_inode_with_no_free_space) {}
+TEST_P(InodeTest, add_data_clear_load_indirect_inode_with_no_free_space) {
+    for (auto i = 0; i < MB.n_data_blocks; i++) {
+        data_bitmap.set_block(i, 1);
+    }
+
+    inode->alloc_new(test_inode_n);
+    update_meta_data(ref_inode1);
+    for (auto i = 0; i < meta_inode_ptr_len; i++) {
+        inode->add_data(ref_inode1.block_ptr[i]);
+    }
+    inode->add_data(123);
+
+    auto n_written = inode->commit(*data_block, data_bitmap);
+    EXPECT_EQ(n_written, meta_inode_ptr_len);
+}
 
 INSTANTIATE_TEST_SUITE_P(BlockSize, InodeTest, testing::ValuesIn(valid_block_sizes));
 }
