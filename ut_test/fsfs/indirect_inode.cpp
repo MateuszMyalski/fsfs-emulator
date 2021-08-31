@@ -57,14 +57,15 @@ TEST_P(IndirectInodeTest, load_and_check) {
 }
 TEST_P(IndirectInodeTest, add_data_and_commit) {
     PtrsLList new_ptrs_list;
-    BlockBitmap data_bitmap(n_blocks);
+    BlockBitmap data_bitmap(MB.n_data_blocks);
     indirect_inode->load(*data_block);
 
     std::vector<address> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
     fill_dummy(new_ptrs);
     new_ptrs_list.insert_after(new_ptrs_list.before_begin(), new_ptrs.begin(), new_ptrs.end());
 
-    indirect_inode->commit(*data_block, data_bitmap, new_ptrs_list);
+    auto n_written = indirect_inode->commit(*data_block, data_bitmap, new_ptrs_list);
+    EXPECT_EQ(n_written, (n_indirect_ptrs_in_block - 1) * 2);
     inode.file_len += new_ptrs.size() * block_size;
     indirect_inode->load(*data_block);
 
@@ -78,7 +79,7 @@ TEST_P(IndirectInodeTest, add_data_and_commit) {
 
 TEST_P(IndirectInodeTest, commit_throw_no_indirect_base_address) {
     PtrsLList new_ptrs_list;
-    BlockBitmap data_bitmap(n_blocks);
+    BlockBitmap data_bitmap(MB.n_data_blocks);
 
     indirect_inode->load(*data_block);
     inode.indirect_inode_ptr = fs_nullptr;
@@ -93,7 +94,22 @@ TEST_P(IndirectInodeTest, commit_with_empty_list) {
     EXPECT_NO_THROW(indirect_inode->commit(*data_block, data_bitmap, new_ptrs_list));
 }
 
-TEST_P(IndirectInodeTest, add_data_and_commit_with_no_free_space) {}
+TEST_P(IndirectInodeTest, add_data_and_commit_with_no_free_space) {
+    PtrsLList new_ptrs_list;
+    constexpr auto n_free_blocks = 1;
+    BlockBitmap data_bitmap(MB.n_data_blocks);
+    for (auto i = 0; i < MB.n_data_blocks - n_free_blocks; i++) {
+        data_bitmap.set_block(i, 1);
+    }
+
+    std::vector<address> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
+    fill_dummy(new_ptrs);
+    new_ptrs_list.insert_after(new_ptrs_list.before_begin(), new_ptrs.begin(), new_ptrs.end());
+
+    indirect_inode->load(*data_block);
+    auto n_written = indirect_inode->commit(*data_block, data_bitmap, new_ptrs_list);
+    EXPECT_EQ(n_written, 2 + (n_indirect_ptrs_in_block - 1));
+}
 
 INSTANTIATE_TEST_SUITE_P(BlockSize, IndirectInodeTest, testing::ValuesIn(valid_block_sizes));
 }

@@ -23,7 +23,7 @@ class IndirectInode {
 
     void clear();
     void load(Block& data_block);
-    void commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLList& ptrs_to_allocate);
+    fsize commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLList& ptrs_to_allocate);
 };
 }
 #endif
