@@ -133,6 +133,19 @@ TEST_P(BlockBitmapTest, next_free_no_free) {
     EXPECT_EQ(bitmap->next_free(0), n_blocks - 1);
 }
 
+TEST_P(BlockBitmapTest, next_free_not_even_bitmap_no_free) {
+    bitmap->init(n_blocks - 1);
+
+    for (auto i = 0; i < n_blocks - 1; i++) {
+        bitmap->set_block(i, 1);
+    }
+
+    EXPECT_EQ(bitmap->next_free(0), -1);
+
+    bitmap->set_block(n_blocks - 2, 0);
+    EXPECT_EQ(bitmap->next_free(0), n_blocks - 2);
+}
+
 INSTANTIATE_TEST_SUITE_P(BlockSize, BlockBitmapTest, testing::ValuesIn(valid_block_sizes));
 
 }

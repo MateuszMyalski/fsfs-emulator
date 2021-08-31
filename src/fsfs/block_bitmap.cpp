@@ -36,6 +36,10 @@ void BlockBitmap::init(address n_blocks) {
     bitmap.resize(map_size);
 
     std::fill_n(bitmap.data(), map_size, 0x00);
+
+    fsize n_unused_bits = map_size * bitmap_row_length - n_blocks;
+    bitmap_t unused_bits_mask = (1UL << n_unused_bits) - 1;
+    bitmap.at(map_size - 1) = unused_bits_mask << (std::numeric_limits<bitmap_t>::digits - n_unused_bits - 1);
 }
 
 void BlockBitmap::set_block(address block_n, bool status) {
