@@ -30,7 +30,7 @@ address Block::read_block(address block_n) {
 }
 
 fsize Block::write(address block_n, const data* wdata, fsize offset, fsize length) {
-    if (block_n >= MB.n_data_blocks || block_n < 0) {
+    if (block_n >= MB.n_blocks || block_n < 0) {
         throw std::invalid_argument("Invalid data block number.");
     }
 
@@ -61,7 +61,7 @@ fsize Block::write(address block_n, const data* wdata, fsize offset, fsize lengt
 }
 
 fsize Block::read(address block_n, data* rdata, fsize offset, fsize length) {
-    if (block_n >= MB.n_data_blocks || block_n < 0) {
+    if (block_n >= MB.n_blocks || block_n < 0) {
         throw std::invalid_argument("Invalid data block number.");
     }
 
@@ -106,7 +106,7 @@ fsize Block::get_n_inodes_in_block() { return MB.block_size / meta_fragm_size; }
 
 fsize Block::get_n_addreses_in_block() { return MB.block_size / sizeof(address); }
 
-fsize Block::get_block_size() { return MB.block_size; };
+fsize Block::get_block_size() { return MB.block_size; }
 
 fsize Block::bytes_to_blocks(fsize length) {
     length = std::max(0, length);

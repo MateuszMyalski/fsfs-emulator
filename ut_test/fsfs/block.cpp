@@ -1,4 +1,5 @@
 #include "fsfs/block.hpp"
+
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
@@ -50,7 +51,7 @@ TEST_P(BlockTest, data_n_to_block_n) {
 
 TEST_P(BlockTest, write_throw_invalid_block_number) {
     data dummy_data = 0x00;
-    EXPECT_THROW(data_block->write(MB.n_data_blocks, &dummy_data, 0, 0), std::invalid_argument);
+    EXPECT_THROW(data_block->write(MB.n_blocks, &dummy_data, 0, 0), std::invalid_argument);
     EXPECT_THROW(data_block->write(-1, &dummy_data, 0, 0), std::invalid_argument);
 }
 
@@ -67,7 +68,7 @@ TEST_P(BlockTest, write_throw_invalid_length) {
 
 TEST_P(BlockTest, read_throw_invalid_block_number) {
     data dummy_data = 0x00;
-    EXPECT_THROW(data_block->read(MB.n_data_blocks, &dummy_data, 0, 0), std::invalid_argument);
+    EXPECT_THROW(data_block->read(MB.n_blocks, &dummy_data, 0, 0), std::invalid_argument);
     EXPECT_THROW(data_block->read(-1, &dummy_data, 0, 0), std::invalid_argument);
 }
 
