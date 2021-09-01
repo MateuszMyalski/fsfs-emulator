@@ -13,13 +13,14 @@ using PtrsLList = std::forward_list<address>;
 class IndirectInode {
    private:
     const inode_block& inode;
-    address last_indirect_block_n;
+    std::forward_list<address> indirect_block_n;
     std::vector<address> indirect_ptrs_list;
 
    public:
     IndirectInode(const inode_block& inode);
 
     address ptr(address ptr_n) const;
+    address last_indirect_ptr(address indirect_ptr_n) const;
 
     void clear();
     void load(Block& data_block);

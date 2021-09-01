@@ -55,6 +55,7 @@ TEST_P(IndirectInodeTest, load_and_check) {
         EXPECT_EQ(ptrs[i], indirect_inode->ptr(i));
     }
 }
+
 TEST_P(IndirectInodeTest, add_data_and_commit) {
     PtrsLList new_ptrs_list;
     BlockBitmap data_bitmap(MB.n_data_blocks);
@@ -75,6 +76,34 @@ TEST_P(IndirectInodeTest, add_data_and_commit) {
     for (size_t i = 0; i < new_ptrs.size(); i++) {
         EXPECT_EQ(new_ptrs[i], indirect_inode->ptr(ptrs.size() + i));
     }
+}
+
+TEST_P(IndirectInodeTest, add_data_and_last_indirect_ptr) {
+    PtrsLList new_ptrs_list;
+    BlockBitmap data_bitmap(MB.n_data_blocks);
+    indirect_inode->load(*data_block);
+
+    std::vector<address> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
+    fill_dummy(new_ptrs);
+    new_ptrs_list.insert_after(new_ptrs_list.before_begin(), new_ptrs.begin(), new_ptrs.end());
+
+    auto n_written = indirect_inode->commit(*data_block, data_bitmap, new_ptrs_list);
+    EXPECT_EQ(n_written, (n_indirect_ptrs_in_block - 1) * 2);
+    inode.file_len += new_ptrs.size() * block_size;
+    indirect_inode->load(*data_block);
+
+    EXPECT_NE(indirect_inode->last_indirect_ptr(0), fs_nullptr);
+    EXPECT_NE(indirect_inode->last_indirect_ptr(1), fs_nullptr);
+    EXPECT_EQ(indirect_inode->last_indirect_ptr(2), indirect2_data_block);
+    EXPECT_EQ(indirect_inode->last_indirect_ptr(3), indirect1_data_block);
+    EXPECT_EQ(indirect_inode->last_indirect_ptr(4), indirect0_data_block);
+}
+
+TEST_P(IndirectInodeTest, add_data_and_last_indirect_ptr_overflow) {
+    PtrsLList new_ptrs_list;
+    BlockBitmap data_bitmap(MB.n_data_blocks);
+    indirect_inode->load(*data_block);
+    EXPECT_EQ(indirect_inode->last_indirect_ptr(3), fs_nullptr);
 }
 
 TEST_P(IndirectInodeTest, commit_throw_no_indirect_base_address) {

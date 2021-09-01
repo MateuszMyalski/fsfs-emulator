@@ -6,21 +6,26 @@ IndirectInode::IndirectInode(const inode_block& inode) : inode(inode) { clear();
 
 address IndirectInode::ptr(address ptr_n) const { return indirect_ptrs_list[ptr_n]; }
 
+address IndirectInode::last_indirect_ptr(address indirect_ptr_n) const {
+    auto it = std::next(indirect_block_n.cbegin(), indirect_ptr_n);
+    if (it == indirect_block_n.cend()) {
+        return fs_nullptr;
+    }
+
+    return *it;
+}
+
 fsize IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLList& ptrs_to_allocate) {
     if (inode.indirect_inode_ptr == fs_nullptr) {
         throw std::runtime_error("Cannot access base address of indirect inode.");
-    }
-
-    if (last_indirect_block_n == inode.indirect_inode_ptr) {
-        throw std::runtime_error("Cannot find base of indirect blocks.");
     }
 
     if (ptrs_to_allocate.empty()) {
         return 0;
     }
 
-    if (last_indirect_block_n == fs_nullptr) {
-        last_indirect_block_n = inode.indirect_inode_ptr;
+    if (indirect_block_n.empty()) {
+        indirect_block_n.push_front(inode.indirect_inode_ptr);
     }
 
     fsize n_used_indirect_ptrs = std::max(data_block.bytes_to_blocks(inode.file_len) - meta_inode_ptr_len, 0);
@@ -38,7 +43,7 @@ fsize IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLLi
     fsize n_ptrs_to_write = std::min(n_free_slots, n_to_write);
     if (n_ptrs_to_write > 0) {
         data* indirect_ptrs_list_p = cast_to_data(&indirect_ptrs_list[n_used_indirect_ptrs]);
-        address addr = data_block.data_n_to_block_n(last_indirect_block_n);
+        address addr = data_block.data_n_to_block_n(indirect_block_n.front());
 
         data_block.write(addr, indirect_ptrs_list_p, last_ptr_in_block * sizeof(address),
                          n_ptrs_to_write * sizeof(address));
@@ -54,14 +59,14 @@ fsize IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLLi
             return n_new_ptrs - n_to_write;
         }
         data_bitmap.set_block(new_block_addr, 1);
-        address addr = data_block.data_n_to_block_n(last_indirect_block_n);
-        last_indirect_block_n = new_block_addr;
+        address addr = data_block.data_n_to_block_n(indirect_block_n.front());
+        indirect_block_n.push_front(new_block_addr);
 
         data_block.write(addr, cast_to_data(&new_block_addr), -static_cast<fsize>(sizeof(address)), sizeof(address));
 
         data* indirect_ptrs_list_p = cast_to_data(&indirect_ptrs_list[n_used_indirect_ptrs]);
         n_ptrs_to_write = std::min(data_block.get_n_addreses_in_block() - 1, n_to_write);
-        addr = data_block.data_n_to_block_n(last_indirect_block_n);
+        addr = data_block.data_n_to_block_n(indirect_block_n.front());
 
         data_block.write(addr, cast_to_data(indirect_ptrs_list_p), 0, n_ptrs_to_write * sizeof(address));
 
@@ -74,8 +79,8 @@ fsize IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLLi
 }
 
 void IndirectInode::clear() {
-    last_indirect_block_n = fs_nullptr;
     indirect_ptrs_list.clear();
+    indirect_block_n.clear();
 }
 
 void IndirectInode::load(Block& data_block) {
@@ -84,9 +89,11 @@ void IndirectInode::load(Block& data_block) {
         return;
     }
 
+    clear();
     indirect_ptrs_list.resize(n_indirect_used_ptrs);
 
     address indirect_block_ptr = inode.indirect_inode_ptr;
+    indirect_block_n.push_front(indirect_block_ptr);
 
     fsize ptrs_length = data_block.get_block_size() - sizeof(address);
 
@@ -98,6 +105,7 @@ void IndirectInode::load(Block& data_block) {
 
         data_block.read(addr, data_indirect_p, 0, ptrs_length);
         data_block.read(addr, cast_to_data(&indirect_block_ptr), ptrs_length, sizeof(address));
+        indirect_block_n.push_front(indirect_block_ptr);
 
         n_read_ptrs += (data_block.get_n_addreses_in_block() - 1);
     }
@@ -110,6 +118,6 @@ void IndirectInode::load(Block& data_block) {
         data_block.read(addr, data_indirect_p, 0, n_ptrs_left * sizeof(address));
     }
 
-    last_indirect_block_n = indirect_block_ptr;
+    // indirect_block_n.push_front(indirect_block_ptr);
 }
 }
