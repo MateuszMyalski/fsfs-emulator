@@ -64,13 +64,19 @@ void Inode::alloc_new(address inode_n) {
     clear();
 
     loaded_inode_n = inode_n;
-    inode.type = block_status::Used;
-    inode.file_len = 0;
-    inode.file_name[0] = '\0';
-    inode.indirect_inode_ptr = fs_nullptr;
-    for (auto& ptr_n : inode.block_ptr) {
+    inode_buf.type = block_status::Used;
+    inode_buf.file_len = 0;
+    inode_buf.file_name[0] = '\0';
+    inode_buf.indirect_inode_ptr = fs_nullptr;
+    for (auto& ptr_n : inode_buf.block_ptr) {
         ptr_n = fs_nullptr;
     }
+
+    memcpy(&inode, &inode_buf, sizeof(inode_block));
+}
+
+address Inode::last_indirect_ptr(address indirect_ptr_n) const {
+    return indirect_inode.last_indirect_ptr(indirect_ptr_n);
 }
 
 fsize Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
@@ -88,15 +94,17 @@ fsize Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
 
     while (!ptrs_to_allocate.empty()) {
         if (ptrs_used >= meta_inode_ptr_len) {
-            address new_block_n = data_bitmap.next_free(0);
-            if (new_block_n == fs_nullptr) {
-                data_block.write(block_n, data_inode_p, offset, meta_fragm_size);
-                clear();
-                return n_written;
+            if (inode.indirect_inode_ptr == fs_nullptr) {
+                address new_block_n = data_bitmap.next_free(0);
+                if (new_block_n == fs_nullptr) {
+                    data_block.write(block_n, data_inode_p, offset, meta_fragm_size);
+                    clear();
+                    return n_written;
+                }
+                data_bitmap.set_block(new_block_n, 1);
+                meta().indirect_inode_ptr = new_block_n;
+                inode.indirect_inode_ptr = new_block_n;
             }
-            data_bitmap.set_block(new_block_n, 1);
-            meta().indirect_inode_ptr = new_block_n;
-            inode.indirect_inode_ptr = new_block_n;
             n_written += indirect_inode.commit(data_block, data_bitmap, ptrs_to_allocate);
             break;
         }

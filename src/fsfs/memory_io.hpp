@@ -20,13 +20,6 @@ class MemoryIO {
 
     void set_data_blocks_status(address inode_n, bool status);
 
-    decltype(auto) get_abs_addr(address inode_n, fsize abs_ptr_n);
-    decltype(auto) set_abs_addr(address inode_n, fsize abs_ptr_n);
-
-    address expand_indirect(address data_n);
-    address expand_inode(address inode_n);
-    address assign_data_block(address inode_n, fsize abs_ptr_n);
-
     fsize store_data(address data_n, const data* wdata, fsize length);
     fsize edit_data(address inode_n, const data* wdata, fsize offset, fsize length);
 

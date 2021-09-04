@@ -1,8 +1,7 @@
 #include "fsfs/memory_io.hpp"
 
-#include "fsfs/data_block.hpp"
-#include "fsfs/file_system.hpp"
-#include "fsfs/indirect_inode.hpp"
+#include "fsfs/block.hpp"
+#include "fsfs/block_bitmap.hpp"
 #include "fsfs/inode.hpp"
 #include "test_base.hpp"
 using namespace FSFS;
@@ -26,65 +25,37 @@ class MemoryIOTest : public ::testing::TestWithParam<fsize>, public TestBaseFile
     void TearDown() override { delete io; }
 
     void set_dummy_blocks() {
-        Inode inode(disk, MB);
-        IndirectInode iinode(disk, MB);
+        BlockBitmap bitmap(n_blocks);
+        Block data_block(disk, MB);
+        Inode inode;
 
-        inode.alloc(0);
-        inode.commit();
+        inode.alloc_new(0);
+        inode.commit(data_block, bitmap);
         used_inode_blocks.push_back(0);
 
-        inode.alloc(1);
-        inode.update(1).file_len = 4 * block_size + 1;
-        address ptr_offset = 0;
-        for (auto& block_ptr : inode.update(1).block_ptr) {
-            block_ptr = ptr_offset;
-            used_data_blocks.push_back(ptr_offset);
-            ptr_offset += 1;
+        inode.alloc_new(1);
+        auto inode1_len = 4 * block_size + 1;
+        inode.meta().file_len = inode1_len;
+        for (auto i = 0; i < data_block.bytes_to_blocks(inode1_len); i++) {
+            auto block_n = bitmap.next_free(0);
+            bitmap.set_block(block_n, 1);
+            used_data_blocks.push_back(block_n);
+            inode.add_data(block_n);
         }
-        inode.commit();
+        inode.commit(data_block, bitmap);
         used_inode_blocks.push_back(1);
 
-        fsize direct_ptr_size = meta_inode_ptr_len * block_size;
-        fsize n_ptrs_indirect = MB.block_size / sizeof(address);
-        address long_inode_addr = MB.block_size / meta_fragm_size + 1;
-        fsize long_inode_len = direct_ptr_size;
-
-        long_inode_len += 2 * (n_ptrs_indirect - 2) * block_size;
-        inode.alloc(long_inode_addr);
-
-        inode.update(long_inode_addr).file_len = long_inode_len;
-        for (auto& block_ptr : inode.update(long_inode_addr).block_ptr) {
-            block_ptr = ptr_offset;
-            used_data_blocks.push_back(ptr_offset);
-            ptr_offset += 1;
+        inode.alloc_new(2);
+        auto inode2_len = (meta_inode_ptr_len * block_size) + ((n_indirect_ptrs_in_block - 1) * 4 * block_size);
+        inode.meta().file_len = inode2_len;
+        for (auto i = 0; i < data_block.bytes_to_blocks(inode2_len); i++) {
+            auto block_n = bitmap.next_free(0);
+            bitmap.set_block(block_n, 1);
+            used_data_blocks.push_back(block_n);
+            inode.add_data(block_n);
         }
-        inode.update(long_inode_addr).indirect_inode_ptr = 1024;
-        inode.commit();
-        used_inode_blocks.push_back(long_inode_addr);
-
-        iinode.alloc(1024);
-        iinode.set_indirect_address(1024, 1028);
-        iinode.commit();
-        used_data_blocks.push_back(1024);
-        iinode.alloc(1028);
-        iinode.commit();
-        used_data_blocks.push_back(1028);
-
-        fsize n_ptrs = (long_inode_len - direct_ptr_size) / MB.block_size;
-        n_ptrs += (long_inode_len - direct_ptr_size) % MB.block_size ? 1 : 0;
-        fsize nth_ptr = 0;
-        for (auto i = 0; i < n_ptrs; i++) {
-            iinode.set_ptr(1024, i) = ptr_offset;
-            used_data_blocks.push_back(ptr_offset);
-            ptr_offset += 1;
-            nth_ptr += 1;
-
-            if (nth_ptr == (n_ptrs_indirect - 1)) {
-                iinode.commit();
-                nth_ptr = 0;
-            }
-        }
-        iinode.commit();
+        inode.commit(data_block, bitmap);
+        used_inode_blocks.push_back(2);
     }
 };
 
@@ -113,14 +84,14 @@ TEST_P(MemoryIOTest, scan_blocks) {
 TEST_P(MemoryIOTest, alloc_inode) {
     EXPECT_EQ(io->alloc_inode("TOO LONG FILE NAME 012345678910"), fs_nullptr);
 
-    auto addr = io->alloc_inode("Inode name");
+    auto inode_n = io->alloc_inode("Inode name");
 
-    EXPECT_TRUE(io->get_inode_bitmap().get_block_status(addr));
+    EXPECT_TRUE(io->get_inode_bitmap().get_block_status(inode_n));
 }
 
 TEST_P(MemoryIOTest, dealloc_inode) {
-    address invalid_inode = MB.n_inode_blocks - 1;
-    EXPECT_EQ(io->dealloc_inode(invalid_inode), fs_nullptr);
+    address invalid_inode_n = MB.n_inode_blocks - 1;
+    EXPECT_EQ(io->dealloc_inode(invalid_inode_n), fs_nullptr);
 
     ASSERT_TRUE(io->get_inode_bitmap().get_block_status(1));
     for (fsize ptr_n = 0; ptr_n < meta_inode_ptr_len; ptr_n++) {

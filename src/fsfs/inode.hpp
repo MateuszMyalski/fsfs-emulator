@@ -21,7 +21,10 @@ class Inode {
 
     inode_block const& meta() const;
     inode_block& meta();
+
     address ptr(address ptr_n) const;
+    address last_indirect_ptr(address indirect_ptr_n) const;
+
     void add_data(address new_data_n);
     void alloc_new(address inode_n);
 

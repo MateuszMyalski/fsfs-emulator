@@ -85,7 +85,7 @@ void IndirectInode::clear() {
 
 void IndirectInode::load(Block& data_block) {
     fsize n_indirect_used_ptrs = data_block.bytes_to_blocks(inode.file_len) - meta_inode_ptr_len;
-    if ((n_indirect_used_ptrs <= meta_inode_ptr_len) || (inode.indirect_inode_ptr == fs_nullptr)) {
+    if ((n_indirect_used_ptrs <= 0) || (inode.indirect_inode_ptr == fs_nullptr)) {
         return;
     }
 
