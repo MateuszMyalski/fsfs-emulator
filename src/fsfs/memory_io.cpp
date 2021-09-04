@@ -15,7 +15,7 @@ void MemoryIO::init(const super_block& MB) {
 
 void MemoryIO::set_data_blocks_status(address inode_n, bool status) {
     inode.load(inode_n, data_block);
-    fsize n_ptrs_used = bytes_to_blocks(inode.meta().file_len);
+    fsize n_ptrs_used = data_block.bytes_to_blocks(inode.meta().file_len);
 
     for (auto i = 0; i < n_ptrs_used; i++) {
         data_bitmap.set_block(inode.ptr(i), status);
@@ -26,11 +26,6 @@ void MemoryIO::set_data_blocks_status(address inode_n, bool status) {
         data_bitmap.set_block(indirect_block_n, status);
         indirect_addr = inode.last_indirect_ptr(indirect_block_n);
     }
-}
-
-fsize MemoryIO::store_data(address data_n, const data* wdata, fsize length) {
-    fsize to_write = std::min(length, MB.block_size);
-    return data_block.write(data_n, wdata, 0, to_write);
 }
 
 fsize MemoryIO::edit_data(address inode_n, const data* wdata, fsize offset, fsize length) {
@@ -56,7 +51,7 @@ fsize MemoryIO::edit_data(address inode_n, const data* wdata, fsize offset, fsiz
 
     ptr_n += 1;
     if (length - n_written > 0) {
-        fsize blocks_to_edit = bytes_to_blocks(length);
+        fsize blocks_to_edit = data_block.bytes_to_blocks(length);
         for (auto i = 0; i < blocks_to_edit; i++) {
             address addr = data_block.data_n_to_block_n(inode.ptr(ptr_n));
             fsize write_length = min(MB.block_size, length - n_written);
@@ -89,9 +84,9 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
 
     const data* wdata_new_p = &wdata[n_eddited];
     fsize n_written = 0;
-    fsize n_ptr_used = bytes_to_blocks(inode.meta().file_len);
+    fsize n_ptr_used = data_block.bytes_to_blocks(inode.meta().file_len);
     fsize free_bytes = n_ptr_used * MB.block_size - inode.meta().file_len;
-    fsize blocks_of_new_data = bytes_to_blocks(max(0, length - free_bytes - n_eddited));
+    fsize blocks_of_new_data = data_block.bytes_to_blocks(max(0, length - free_bytes - n_eddited));
 
     if (free_bytes > 0) {
         address last_ptr_n = max(0, n_ptr_used - 1);
@@ -218,10 +213,4 @@ void MemoryIO::scan_blocks() {
     }
 }
 
-fsize MemoryIO::bytes_to_blocks(fsize length) {
-    length = std::max(0, length);
-    fsize n_ptrs_used = length / MB.block_size;
-    n_ptrs_used += length % MB.block_size ? 1 : 0;
-    return n_ptrs_used;
-}
 }

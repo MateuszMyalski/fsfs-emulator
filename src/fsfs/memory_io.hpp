@@ -20,7 +20,6 @@ class MemoryIO {
 
     void set_data_blocks_status(address inode_n, bool status);
 
-    fsize store_data(address data_n, const data* wdata, fsize length);
     fsize edit_data(address inode_n, const data* wdata, fsize offset, fsize length);
 
     template <typename Self>
@@ -49,7 +48,6 @@ class MemoryIO {
     fsize read_data(address inode_n, const data* wdata, address offset, fsize length);
 
     void scan_blocks();
-    fsize bytes_to_blocks(fsize length);
 
     decltype(auto) get_inode_bitmap() const { return get_inode_bitmap_common(this); }
 

@@ -188,7 +188,7 @@ TEST_P(MemoryIOWriteDataTest, nested_indirect_blocks) {
         ASSERT_NE(inode->meta().block_ptr[i], fs_nullptr);
     }
 
-    fsize reserved_blocks = io->bytes_to_blocks(data_len);
+    fsize reserved_blocks = data_block->bytes_to_blocks(data_len);
     auto wdata_it = wdata.cbegin();
 
     for (auto i = 0; i < reserved_blocks; i++) {
@@ -237,7 +237,7 @@ TEST_P(MemoryIOWriteDataTest, offset_write) {
     inode->load(inode_n, *data_block);
     EXPECT_EQ(inode->meta().file_len, data_len + add_length);
 
-    fsize reserved_blocks = io->bytes_to_blocks(data_len + add_length);
+    fsize reserved_blocks = data_block->bytes_to_blocks(data_len + add_length);
     auto wdata_it = wdata.cbegin();
     for (auto i = 0; i < reserved_blocks; i++) {
         EXPECT_TRUE(check_block(inode->ptr(i), wdata, wdata_it));
