@@ -7,12 +7,10 @@ class BlockBitmapTest : public ::testing::TestWithParam<fsize>, public TestBaseB
    protected:
     constexpr static auto bitmap_row_length = std::numeric_limits<bitmap_t>::digits;
 
-    BlockBitmap* bitmap;
+    std::unique_ptr<BlockBitmap> bitmap;
 
    public:
-    void SetUp() override { bitmap = new BlockBitmap(); }
-
-    void TearDown() override { delete bitmap; }
+    void SetUp() override { bitmap = std::make_unique<BlockBitmap>(); }
 };
 
 TEST_P(BlockBitmapTest, get_block_status_throw_bitmap_not_initialized) {
