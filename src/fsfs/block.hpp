@@ -20,7 +20,7 @@ class Block {
     Block(Disk& disk, const super_block& MB);
     ~Block();
 
-    void reinit();
+    void resize();
     fsize write(address block_n, const data* wdata, fsize offset, fsize length);
     fsize read(address block_n, data* rdata, fsize offset, fsize length);
 

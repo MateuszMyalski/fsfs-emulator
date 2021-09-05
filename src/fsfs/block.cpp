@@ -5,10 +5,10 @@
 namespace FSFS {
 Block::Block(Disk& disk, const super_block& MB) : disk(disk), MB(MB) {
     disk.mount();
-    reinit();
+    resize();
 }
 
-void Block::reinit() {
+void Block::resize() {
     casched_block = fs_nullptr;
     rwbuffer.resize(MB.block_size);
 }

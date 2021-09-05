@@ -15,7 +15,7 @@ class MemoryIO {
     super_block MB;
     BlockBitmap inode_bitmap;
     BlockBitmap data_bitmap;
-    Block data_block;
+    Block block;
     Inode inode;
 
     void set_data_blocks_status(address inode_n, bool status);
@@ -33,9 +33,9 @@ class MemoryIO {
     }
 
    public:
-    MemoryIO(Disk& disk) : disk(disk), MB(), inode_bitmap(), data_bitmap(), data_block(disk, MB), inode(){};
+    MemoryIO(Disk& disk) : disk(disk), MB(), inode_bitmap(), data_bitmap(), block(disk, MB), inode(){};
 
-    void resize(const super_block& MB);
+    void init(const super_block& MB);
 
     address alloc_inode(const char* file_name);
     address dealloc_inode(address inode_n);
