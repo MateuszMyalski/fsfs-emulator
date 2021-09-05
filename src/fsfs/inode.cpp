@@ -23,21 +23,21 @@ address Inode::ptr(address ptr_n) const {
         throw std::runtime_error("Inode not initialized.");
     }
 
-    if (ptr_n < meta_inode_ptr_len) {
-        return inode.block_ptr[ptr_n];
+    if (ptr_n < meta_n_direct_ptrs) {
+        return inode.direct_ptr[ptr_n];
     }
 
-    return indirect_inode.ptr(ptr_n - meta_inode_ptr_len);
+    return indirect_inode.ptr(ptr_n - meta_n_direct_ptrs);
 }
 
 void Inode::add_data(address new_data_n) { ptrs_to_allocate.push_front(new_data_n); }
 
 void Inode::load_direct(address inode_n, Block& data_block) {
     address block_n = data_block.inode_n_to_block_n(inode_n);
-    fsize offset = inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size;
+    fsize offset = inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size_bytes;
     data* data_inode_p = cast_to_data(&inode);
 
-    data_block.read(block_n, data_inode_p, offset, meta_fragm_size);
+    data_block.read(block_n, data_inode_p, offset, meta_fragm_size_bytes);
     memcpy(&inode_buf, &inode, sizeof(inode_block));
 }
 
@@ -64,11 +64,11 @@ void Inode::alloc_new(address inode_n) {
     clear();
 
     loaded_inode_n = inode_n;
-    inode_buf.type = block_status::Used;
+    inode_buf.status = block_status::Used;
     inode_buf.file_len = 0;
     inode_buf.file_name[0] = '\0';
     inode_buf.indirect_inode_ptr = fs_nullptr;
-    for (auto& ptr_n : inode_buf.block_ptr) {
+    for (auto& ptr_n : inode_buf.direct_ptr) {
         ptr_n = fs_nullptr;
     }
 
@@ -85,7 +85,7 @@ fsize Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
     }
 
     address block_n = data_block.inode_n_to_block_n(loaded_inode_n);
-    fsize offset = loaded_inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size;
+    fsize offset = loaded_inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size_bytes;
     data* data_inode_p = cast_to_data(&inode_buf);
 
     ptrs_to_allocate.reverse();
@@ -93,11 +93,11 @@ fsize Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
     fsize n_written = 0;
 
     while (!ptrs_to_allocate.empty()) {
-        if (ptrs_used >= meta_inode_ptr_len) {
+        if (ptrs_used >= meta_n_direct_ptrs) {
             if (inode.indirect_inode_ptr == fs_nullptr) {
                 address new_block_n = data_bitmap.next_free(0);
                 if (new_block_n == fs_nullptr) {
-                    data_block.write(block_n, data_inode_p, offset, meta_fragm_size);
+                    data_block.write(block_n, data_inode_p, offset, meta_fragm_size_bytes);
                     clear();
                     return n_written;
                 }
@@ -108,13 +108,13 @@ fsize Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
             n_written += indirect_inode.commit(data_block, data_bitmap, ptrs_to_allocate);
             break;
         }
-        inode_buf.block_ptr[ptrs_used] = ptrs_to_allocate.front();
+        inode_buf.direct_ptr[ptrs_used] = ptrs_to_allocate.front();
         ptrs_to_allocate.pop_front();
         ptrs_used++;
         n_written++;
     }
 
-    data_block.write(block_n, data_inode_p, offset, meta_fragm_size);
+    data_block.write(block_n, data_inode_p, offset, meta_fragm_size_bytes);
     clear();
     return n_written;
 }

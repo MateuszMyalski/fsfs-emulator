@@ -102,7 +102,7 @@ address Block::inode_n_to_block_n(address inode_n) {
     return inode_n / get_n_inodes_in_block() + fs_offset_inode_block;
 }
 
-fsize Block::get_n_inodes_in_block() { return MB.block_size / meta_fragm_size; }
+fsize Block::get_n_inodes_in_block() { return MB.block_size / meta_fragm_size_bytes; }
 
 fsize Block::get_n_addreses_in_block() { return MB.block_size / sizeof(address); }
 

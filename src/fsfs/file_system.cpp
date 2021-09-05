@@ -52,7 +52,7 @@ void FileSystem::read_super_block(Disk& disk, super_block& MB) {
     }
 
     for (int32_t i = 0; i < fs_data_row_size; i++) {
-        if (MB.magic_number[i] != meta_magic_num_lut[i]) {
+        if (MB.magic_number[i] != meta_magic_seq_lut[i]) {
             throw std::runtime_error("Super block corrupted. Magic number error.");
         }
     }
@@ -77,11 +77,11 @@ void FileSystem::format(Disk& disk) {
     disk.mount();
 
     fsize real_disk_size = disk.get_disk_size() - 1;
-    fsize meta_blocks = disk.get_block_size() / meta_fragm_size;
+    fsize meta_blocks = disk.get_block_size() / meta_fragm_size_bytes;
     fsize n_inode_blocks = real_disk_size * 0.1;
     std::vector<meta_block> block(meta_blocks);
 
-    std::copy_n(meta_magic_num_lut, fs_data_row_size, block[0].MB.magic_number);
+    std::copy_n(meta_magic_seq_lut, fs_data_row_size, block[0].MB.magic_number);
     block[0].MB.block_size = disk.get_block_size();
     block[0].MB.n_blocks = disk.get_disk_size();
     block[0].MB.n_inode_blocks = n_inode_blocks;
@@ -89,12 +89,12 @@ void FileSystem::format(Disk& disk) {
     block[0].MB.fs_ver_major = fs_system_major;
     block[0].MB.fs_ver_minor = fs_system_minor;
     block[0].MB.checksum = calc_mb_checksum(block[0].MB);
-    disk.write(fs_offset_super_block, block[0].raw_data, meta_fragm_size);
+    disk.write(fs_offset_super_block, block[0].raw_data, meta_fragm_size_bytes);
 
     std::fill(block.begin(), block.end(), fs_nullptr);
     for (auto i = 0; i < meta_blocks; i++) {
-        block[i].inode.type = block_status::Free;
-        std::memcpy(block[i].inode.file_name, inode_def_file_name, meta_file_name_len);
+        block[i].inode.status = block_status::Free;
+        std::memcpy(block[i].inode.file_name, inode_default_file_name, meta_max_file_name_size);
     }
     for (auto i = 0; i < n_inode_blocks; i++) {
         disk.write(fs_offset_inode_block + i, cast_to_data(block.data()), disk.get_block_size());
@@ -108,7 +108,7 @@ uint32_t FileSystem::calc_mb_checksum(super_block& MB) {
     uint8_t* raw_data = cast_to_data(&MB);
     uint8_t checksum[fs_data_row_size] = {};
 
-    fsize mb_size = meta_fragm_size - sizeof(MB.checksum);
+    fsize mb_size = meta_fragm_size_bytes - sizeof(MB.checksum);
     for (auto i = 0; i < mb_size; i++) {
         int32_t idx = i & 0x03;
         checksum[idx] ^= raw_data[i] ^ xor_word[idx];

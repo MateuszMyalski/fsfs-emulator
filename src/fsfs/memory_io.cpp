@@ -134,8 +134,8 @@ address MemoryIO::alloc_inode(const char* file_name) {
         return fs_nullptr;
     }
 
-    fsize file_name_len = strnlen(file_name, meta_file_name_len);
-    if (file_name_len == meta_file_name_len) {
+    fsize file_name_len = strnlen(file_name, meta_max_file_name_size);
+    if (file_name_len == meta_max_file_name_size) {
         return fs_nullptr;
     }
 
@@ -154,7 +154,7 @@ address MemoryIO::dealloc_inode(address inode_n) {
     }
 
     inode.load(inode_n, data_block);
-    inode.meta().type = block_status::Free;
+    inode.meta().status = block_status::Free;
     inode.commit(data_block, data_bitmap);
 
     set_data_blocks_status(inode_n, 0);
@@ -168,8 +168,8 @@ address MemoryIO::rename_inode(address inode_n, const char* file_name) {
         return fs_nullptr;
     }
 
-    fsize file_name_len = strnlen(file_name, meta_file_name_len);
-    if (file_name_len == meta_file_name_len - 1) {
+    fsize file_name_len = strnlen(file_name, meta_max_file_name_size);
+    if (file_name_len == meta_max_file_name_size - 1) {
         return fs_nullptr;
     }
 
@@ -205,7 +205,7 @@ void MemoryIO::scan_blocks() {
 
     for (fsize inode_n = 0; inode_n < MB.n_inode_blocks; inode_n++) {
         inode.load(inode_n, data_block);
-        if (inode.meta().type != block_status::Used) {
+        if (inode.meta().status != block_status::Used) {
             continue;
         }
         inode_bitmap.set_status(inode_n, 1);

@@ -28,7 +28,7 @@ class IndirectInodeTest : public ::testing::TestWithParam<fsize>, public TestBas
         fill_dummy(ptrs);
 
         auto ptr_cnt = 0;
-        inode.file_len = (n_ptrs + meta_inode_ptr_len) * block_size;
+        inode.file_len = (n_ptrs + meta_n_direct_ptrs) * block_size;
         inode.indirect_inode_ptr = indirect0_data_block;
 
         store_indirect(data_block->data_n_to_block_n(indirect0_data_block), &ptrs[ptr_cnt], indirect1_data_block);

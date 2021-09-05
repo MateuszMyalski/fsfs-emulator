@@ -21,10 +21,10 @@ TEST_P(FileSystemTest, format) {
     ASSERT_EQ(n_read, block_size);
 
     super_block *MB = reinterpret_cast<super_block *>(r_data.data());
-    EXPECT_EQ(MB[0].magic_number[0], meta_magic_num_lut[0]);
-    EXPECT_EQ(MB[0].magic_number[1], meta_magic_num_lut[1]);
-    EXPECT_EQ(MB[0].magic_number[2], meta_magic_num_lut[2]);
-    EXPECT_EQ(MB[0].magic_number[3], meta_magic_num_lut[3]);
+    EXPECT_EQ(MB[0].magic_number[0], meta_magic_seq_lut[0]);
+    EXPECT_EQ(MB[0].magic_number[1], meta_magic_seq_lut[1]);
+    EXPECT_EQ(MB[0].magic_number[2], meta_magic_seq_lut[2]);
+    EXPECT_EQ(MB[0].magic_number[3], meta_magic_seq_lut[3]);
     EXPECT_EQ(MB[0].n_blocks, disk.get_disk_size());
     EXPECT_EQ(MB[0].n_data_blocks, n_data_blocks);
     EXPECT_EQ(MB[0].n_inode_blocks, n_inode_blocks);
@@ -36,13 +36,13 @@ TEST_P(FileSystemTest, format) {
         n_read = disk.read(block_n, r_data.data(), block_size);
         ASSERT_EQ(n_read, block_size);
 
-        for (auto j = 0; j < block_size / meta_fragm_size; j++) {
+        for (auto j = 0; j < block_size / meta_fragm_size_bytes; j++) {
             inode_block *inode = reinterpret_cast<inode_block *>(r_data.data());
-            for (auto ptr_idx = 0; ptr_idx < meta_inode_ptr_len; ptr_idx++) {
-                EXPECT_EQ(inode[j].block_ptr[ptr_idx], fs_nullptr);
+            for (auto ptr_idx = 0; ptr_idx < meta_n_direct_ptrs; ptr_idx++) {
+                EXPECT_EQ(inode[j].direct_ptr[ptr_idx], fs_nullptr);
             }
-            EXPECT_STREQ(inode[j].file_name, inode_def_file_name);
-            EXPECT_EQ(inode[j].type, block_status::Free);
+            EXPECT_STREQ(inode[j].file_name, inode_default_file_name);
+            EXPECT_EQ(inode[j].status, block_status::Free);
             EXPECT_EQ(inode[j].indirect_inode_ptr, fs_nullptr);
         }
     }

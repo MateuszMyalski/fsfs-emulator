@@ -16,7 +16,7 @@ class MemoryIOTest : public ::testing::TestWithParam<fsize>, public TestBaseFile
     std::vector<address> used_inode_blocks;
     constexpr static const char* valid_file_name = "SampleFile";
 
-    fsize ref_nested_inode_n_ptrs = meta_inode_ptr_len + (n_indirect_ptrs_in_block - 1) * 4;
+    fsize ref_nested_inode_n_ptrs = meta_n_direct_ptrs + (n_indirect_ptrs_in_block - 1) * 4;
 
    public:
     void SetUp() override {
@@ -135,7 +135,7 @@ TEST_P(MemoryIOTest, write_uneven_direct_blocks) {
 }
 
 TEST_P(MemoryIOTest, write_single_indirect_blocks) {
-    fsize data_len = block_size * meta_inode_ptr_len + 1;
+    fsize data_len = block_size * meta_n_direct_ptrs + 1;
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
@@ -161,7 +161,7 @@ TEST_P(MemoryIOTest, write_append_data_uneven) {
 }
 
 TEST_P(MemoryIOTest, write_nested_indirect_blocks) {
-    fsize data_len = block_size * meta_inode_ptr_len + 2 * block_size * (block->get_n_addreses_in_block() - 1);
+    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size * (block->get_n_addreses_in_block() - 1);
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
@@ -187,7 +187,7 @@ TEST_P(MemoryIOTest, write_append_data_even) {
 }
 
 TEST_P(MemoryIOTest, write_with_offset_greater_than_edit_length) {
-    fsize data_len = block_size * meta_inode_ptr_len + 2 * block_size;
+    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
@@ -201,7 +201,7 @@ TEST_P(MemoryIOTest, write_with_offset_greater_than_edit_length) {
 }
 
 TEST_P(MemoryIOTest, write_with_offset_same_as_edit_length) {
-    fsize data_len = block_size * meta_inode_ptr_len + 2 * block_size;
+    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
@@ -215,7 +215,7 @@ TEST_P(MemoryIOTest, write_with_offset_same_as_edit_length) {
 }
 
 TEST_P(MemoryIOTest, write_with_offset_and_overflown_length) {
-    fsize data_len = block_size * meta_inode_ptr_len + 2 * block_size;
+    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
@@ -255,13 +255,13 @@ TEST_P(MemoryIOTest, scan_blocks) {
 
 TEST_P(MemoryIOTest, alloc_inode_too_long_name) {
     constexpr const char* too_long_name = "TOO LONG FILE NAME 012345678910 ABCDE";
-    ASSERT_EQ(strnlen(too_long_name, meta_file_name_len), meta_file_name_len);
+    ASSERT_EQ(strnlen(too_long_name, meta_max_file_name_size), meta_max_file_name_size);
     EXPECT_EQ(io->alloc_inode(too_long_name), fs_nullptr);
 }
 
 TEST_P(MemoryIOTest, alloc_inode_valid_data) {
     constexpr const char* inode_name = "Inode name";
-    ASSERT_LT(strnlen(inode_name, meta_file_name_len), meta_file_name_len);
+    ASSERT_LT(strnlen(inode_name, meta_max_file_name_size), meta_max_file_name_size);
     auto inode_n = io->alloc_inode(inode_name);
     EXPECT_TRUE(io->get_inode_bitmap().get_status(inode_n));
 }
@@ -290,7 +290,7 @@ TEST_P(MemoryIOTest, rename_inode) {
     constexpr const char* file_name_ref = "Inode name_ref";
     address addr = io->alloc_inode(file_name_ref);
 
-    char file_name[meta_file_name_len] = {};
+    char file_name[meta_max_file_name_size] = {};
     io->get_inode_file_name(addr, file_name);
     EXPECT_STREQ(file_name, file_name_ref);
 

@@ -32,7 +32,7 @@ TEST_P(BlockTest, inode_n_to_block_n_throw_invalid_block) {
 }
 
 TEST_P(BlockTest, inode_n_to_block_n) {
-    fsize n_meta_blocks_in_block = block_size / meta_fragm_size;
+    fsize n_meta_blocks_in_block = block_size / meta_fragm_size_bytes;
 
     EXPECT_EQ(data_block->inode_n_to_block_n(0), fs_offset_inode_block);
     EXPECT_EQ(data_block->inode_n_to_block_n(1), fs_offset_inode_block);

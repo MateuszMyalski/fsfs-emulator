@@ -28,7 +28,7 @@ fsize IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLLi
         indirect_block_n.push_front(inode.indirect_inode_ptr);
     }
 
-    fsize n_used_indirect_ptrs = std::max(data_block.bytes_to_blocks(inode.file_len) - meta_inode_ptr_len, 0);
+    fsize n_used_indirect_ptrs = std::max(data_block.bytes_to_blocks(inode.file_len) - meta_n_direct_ptrs, 0);
     fsize n_new_ptrs = std::distance(ptrs_to_allocate.begin(), ptrs_to_allocate.end());
     fsize n_to_write = n_new_ptrs;
 
@@ -84,7 +84,7 @@ void IndirectInode::clear() {
 }
 
 void IndirectInode::load(Block& data_block) {
-    fsize n_indirect_used_ptrs = data_block.bytes_to_blocks(inode.file_len) - meta_inode_ptr_len;
+    fsize n_indirect_used_ptrs = data_block.bytes_to_blocks(inode.file_len) - meta_n_direct_ptrs;
     if ((n_indirect_used_ptrs <= 0) || (inode.indirect_inode_ptr == fs_nullptr)) {
         return;
     }
