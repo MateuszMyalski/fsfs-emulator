@@ -2,9 +2,9 @@
 #define COMMON_TYPES_HPP
 #include <stdint.h>
 namespace FSFS {
-typedef int32_t address;
-typedef int32_t fsize;
-typedef uint8_t data;
+using address = int32_t;
+using fsize = int32_t;
+using data = uint8_t;
 
 template <typename T>
 data* cast_to_data(T container) {
