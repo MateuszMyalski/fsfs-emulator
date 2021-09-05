@@ -84,38 +84,36 @@ fsize Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
         return 0;
     }
 
-    address block_n = data_block.inode_n_to_block_n(loaded_inode_n);
-    fsize offset = loaded_inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size_bytes;
-    data* data_inode_p = cast_to_data(&inode_buf);
+    ptrs_to_allocate.reverse();  // Adding data to the forward list is in reversed order
+    fsize n_ptrs_written = 0;
 
-    ptrs_to_allocate.reverse();
+    address addr = data_block.inode_n_to_block_n(loaded_inode_n);
+    fsize inode_n_offset = loaded_inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size_bytes;
     fsize ptrs_used = data_block.bytes_to_blocks(inode.file_len);
-    fsize n_written = 0;
-
     while (!ptrs_to_allocate.empty()) {
         if (ptrs_used >= meta_n_direct_ptrs) {
             if (inode.indirect_inode_ptr == fs_nullptr) {
+                // No more direct ptr slots, allocate new indirect slot if needed or use already alloceted one
                 address new_block_n = data_bitmap.next_free(0);
                 if (new_block_n == fs_nullptr) {
-                    data_block.write(block_n, data_inode_p, offset, meta_fragm_size_bytes);
-                    clear();
-                    return n_written;
+                    break;
                 }
                 data_bitmap.set_status(new_block_n, 1);
                 meta().indirect_inode_ptr = new_block_n;
                 inode.indirect_inode_ptr = new_block_n;
             }
-            n_written += indirect_inode.commit(data_block, data_bitmap, ptrs_to_allocate);
+            n_ptrs_written += indirect_inode.commit(data_block, data_bitmap, ptrs_to_allocate);
             break;
         }
         inode_buf.direct_ptr[ptrs_used] = ptrs_to_allocate.front();
         ptrs_to_allocate.pop_front();
+
         ptrs_used++;
-        n_written++;
+        n_ptrs_written++;
     }
 
-    data_block.write(block_n, data_inode_p, offset, meta_fragm_size_bytes);
+    data_block.write(addr, cast_to_data(&inode_buf), inode_n_offset, meta_fragm_size_bytes);
     clear();
-    return n_written;
+    return n_ptrs_written;
 }
 }
