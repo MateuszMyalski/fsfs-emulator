@@ -5,10 +5,10 @@
 
 namespace FSFS {
 
-void MemoryIO::init(const super_block& MB) {
+void MemoryIO::resize(const super_block& MB) {
     std::memcpy(&this->MB, &MB, sizeof(MB));
-    inode_bitmap.init(MB.n_inode_blocks);
-    data_bitmap.init(MB.n_data_blocks);
+    inode_bitmap.resize(MB.n_inode_blocks);
+    data_bitmap.resize(MB.n_data_blocks);
 
     data_block.reinit();
 }
@@ -200,8 +200,8 @@ address MemoryIO::get_inode_file_name(address inode_n, char* file_name_buffer) {
 }
 
 void MemoryIO::scan_blocks() {
-    inode_bitmap.init(MB.n_inode_blocks);
-    data_bitmap.init(MB.n_data_blocks);
+    inode_bitmap.resize(MB.n_inode_blocks);
+    data_bitmap.resize(MB.n_data_blocks);
 
     for (fsize inode_n = 0; inode_n < MB.n_inode_blocks; inode_n++) {
         inode.load(inode_n, data_block);

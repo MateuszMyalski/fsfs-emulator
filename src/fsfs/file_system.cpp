@@ -38,7 +38,7 @@ address FileSystem::create(const char* file_name) { return -1; }
 
 void FileSystem::mount() {
     read_super_block(disk, MB);
-    // io.init(MB);
+    // io.resize(MB);
     disk.mount();
 }
 

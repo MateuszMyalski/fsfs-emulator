@@ -22,7 +22,7 @@ const bitmap_t& BlockBitmap::get_map_row(address block_n) const {
     return bitmap.at(block_n / bitmap_row_length);
 }
 
-void BlockBitmap::init(address n_blocks) {
+void BlockBitmap::resize(address n_blocks) {
     if (n_blocks <= 0) {
         throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }

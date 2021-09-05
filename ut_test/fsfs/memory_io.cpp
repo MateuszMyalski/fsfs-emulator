@@ -26,7 +26,7 @@ class MemoryIOTest : public ::testing::TestWithParam<fsize>, public TestBaseFile
         inode = std::make_unique<Inode>();
 
         set_dummy_blocks();
-        io->init(MB);
+        io->resize(MB);
         io->scan_blocks();
     }
 

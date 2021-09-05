@@ -18,7 +18,7 @@ class InodeTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSys
 
    public:
     void SetUp() override {
-        data_bitmap.init(MB.n_data_blocks);
+        data_bitmap.resize(MB.n_data_blocks);
         data_block = new Block(disk, MB);
 
         const char name[] = "Test inode";

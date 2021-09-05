@@ -35,7 +35,7 @@ class MemoryIO {
    public:
     MemoryIO(Disk& disk) : disk(disk), MB(), inode_bitmap(), data_bitmap(), data_block(disk, MB), inode(){};
 
-    void init(const super_block& MB);
+    void resize(const super_block& MB);
 
     address alloc_inode(const char* file_name);
     address dealloc_inode(address inode_n);

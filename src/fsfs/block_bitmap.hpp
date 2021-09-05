@@ -20,9 +20,9 @@ class BlockBitmap {
 
    public:
     BlockBitmap() : n_blocks(-1){};
-    BlockBitmap(fsize n_blocks) : n_blocks(n_blocks) { init(n_blocks); };
+    BlockBitmap(fsize n_blocks) : n_blocks(n_blocks) { resize(n_blocks); };
 
-    void init(fsize n_blocks);
+    void resize(fsize n_blocks);
     void set_status(address block_n, bool status);
     bool get_status(address block_n) const;
 
