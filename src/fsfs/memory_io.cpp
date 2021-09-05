@@ -17,13 +17,13 @@ void MemoryIO::set_data_blocks_status(address inode_n, bool status) {
     inode.load(inode_n, data_block);
     fsize n_ptrs_used = data_block.bytes_to_blocks(inode.meta().file_len);
 
-    for (auto i = 0; i < n_ptrs_used; i++) {
+    for (fsize i = 0; i < n_ptrs_used; i++) {
         data_bitmap.set_block(inode.ptr(i), status);
     }
 
-    auto indirect_addr = inode.last_indirect_ptr(0);
-    for (auto indirect_block_n = 0; indirect_addr != fs_nullptr; indirect_block_n++) {
-        data_bitmap.set_block(indirect_block_n, status);
+    fsize indirect_addr = inode.last_indirect_ptr(0);
+    for (fsize indirect_block_n = 0; indirect_addr != fs_nullptr; indirect_block_n++) {
+        data_bitmap.set_block(indirect_addr, status);
         indirect_addr = inode.last_indirect_ptr(indirect_block_n);
     }
 }
@@ -134,12 +134,13 @@ address MemoryIO::alloc_inode(const char* file_name) {
         return fs_nullptr;
     }
 
-    if (strlen(file_name) + 1 >= meta_file_name_len) {
+    fsize file_name_len = strnlen(file_name, meta_file_name_len);
+    if (file_name_len == meta_file_name_len) {
         return fs_nullptr;
     }
 
     inode.alloc_new(inode_n);
-    strcpy(inode.meta().file_name, file_name);
+    memcpy(inode.meta().file_name, file_name, file_name_len);
     inode.commit(data_block, data_bitmap);
 
     inode_bitmap.set_block(inode_n, 1);
@@ -167,16 +168,16 @@ address MemoryIO::rename_inode(address inode_n, const char* file_name) {
         return fs_nullptr;
     }
 
-    if (strlen(file_name) + 1 >= meta_file_name_len) {
+    fsize file_name_len = strnlen(file_name, meta_file_name_len);
+    if (file_name_len == meta_file_name_len - 1) {
         return fs_nullptr;
     }
 
     inode.load(inode_n, data_block);
-    strcpy(inode.meta().file_name, file_name);
+    memcpy(inode.meta().file_name, file_name, file_name_len);
     inode.commit(data_block, data_bitmap);
 
     return inode_n;
-    // TODO strcpy/strlen EVIL!
 }
 
 fsize MemoryIO::get_inode_length(address inode_n) {
