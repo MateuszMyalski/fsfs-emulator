@@ -13,7 +13,7 @@ fsize FileSystem::write(address inode_n, const data& wdata, fsize length, addres
         throw std::invalid_argument("Offset, length and inode number cannot be less than 0");
     }
 
-    if (!io.get_inode_bitmap().get_block_status(inode_n)) {
+    if (!io.get_inode_bitmap().get_status(inode_n)) {
         throw std::runtime_error("Inode not allocated.");
     }
 

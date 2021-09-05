@@ -23,8 +23,8 @@ class BlockBitmap {
     BlockBitmap(fsize n_blocks) : n_blocks(n_blocks) { init(n_blocks); };
 
     void init(fsize n_blocks);
-    void set_block(address block_n, bool status);
-    bool get_block_status(address block_n) const;
+    void set_status(address block_n, bool status);
+    bool get_status(address block_n) const;
 
     address next_free(address block_offset) const;
 };

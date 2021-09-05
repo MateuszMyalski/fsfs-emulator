@@ -152,7 +152,7 @@ TEST_P(InodeTest, add_data_clear_load_indirect_inode) {
 
 TEST_P(InodeTest, add_data_clear_load_indirect_inode_with_no_free_space) {
     for (auto i = 0; i < MB.n_data_blocks; i++) {
-        data_bitmap.set_block(i, 1);
+        data_bitmap.set_status(i, 1);
     }
 
     inode->alloc_new(test_inode_n);

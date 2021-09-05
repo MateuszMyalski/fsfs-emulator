@@ -18,12 +18,12 @@ void MemoryIO::set_data_blocks_status(address inode_n, bool status) {
     fsize n_ptrs_used = data_block.bytes_to_blocks(inode.meta().file_len);
 
     for (fsize i = 0; i < n_ptrs_used; i++) {
-        data_bitmap.set_block(inode.ptr(i), status);
+        data_bitmap.set_status(inode.ptr(i), status);
     }
 
     fsize indirect_addr = inode.last_indirect_ptr(0);
     for (fsize indirect_block_n = 0; indirect_addr != fs_nullptr; indirect_block_n++) {
-        data_bitmap.set_block(indirect_addr, status);
+        data_bitmap.set_status(indirect_addr, status);
         indirect_addr = inode.last_indirect_ptr(indirect_block_n);
     }
 }
@@ -67,7 +67,7 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
     using std::max;
     using std::min;
 
-    if (!inode_bitmap.get_block_status(inode_n)) {
+    if (!inode_bitmap.get_status(inode_n)) {
         return fs_nullptr;
     }
 
@@ -99,7 +99,7 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
         if (data_n == fs_nullptr) {
             break;
         }
-        data_bitmap.set_block(data_n, 1);
+        data_bitmap.set_status(data_n, 1);
         inode.add_data(data_n);
 
         address addr = data_block.data_n_to_block_n(data_n);
@@ -115,7 +115,7 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
 }
 
 address MemoryIO::read_data(address inode_n, const data* wdata, address offset, fsize length) {
-    if (!inode_bitmap.get_block_status(inode_n)) {
+    if (!inode_bitmap.get_status(inode_n)) {
         return fs_nullptr;
     }
 
@@ -143,13 +143,13 @@ address MemoryIO::alloc_inode(const char* file_name) {
     memcpy(inode.meta().file_name, file_name, file_name_len);
     inode.commit(data_block, data_bitmap);
 
-    inode_bitmap.set_block(inode_n, 1);
+    inode_bitmap.set_status(inode_n, 1);
 
     return inode_n;
 }
 
 address MemoryIO::dealloc_inode(address inode_n) {
-    if (!inode_bitmap.get_block_status(inode_n)) {
+    if (!inode_bitmap.get_status(inode_n)) {
         return fs_nullptr;
     }
 
@@ -158,13 +158,13 @@ address MemoryIO::dealloc_inode(address inode_n) {
     inode.commit(data_block, data_bitmap);
 
     set_data_blocks_status(inode_n, 0);
-    inode_bitmap.set_block(inode_n, 0);
+    inode_bitmap.set_status(inode_n, 0);
 
     return inode_n;
 }
 
 address MemoryIO::rename_inode(address inode_n, const char* file_name) {
-    if (!inode_bitmap.get_block_status(inode_n)) {
+    if (!inode_bitmap.get_status(inode_n)) {
         return fs_nullptr;
     }
 
@@ -181,7 +181,7 @@ address MemoryIO::rename_inode(address inode_n, const char* file_name) {
 }
 
 fsize MemoryIO::get_inode_length(address inode_n) {
-    if (!inode_bitmap.get_block_status(inode_n)) {
+    if (!inode_bitmap.get_status(inode_n)) {
         return fs_nullptr;
     }
 
@@ -190,7 +190,7 @@ fsize MemoryIO::get_inode_length(address inode_n) {
 }
 
 address MemoryIO::get_inode_file_name(address inode_n, char* file_name_buffer) {
-    if (!inode_bitmap.get_block_status(inode_n)) {
+    if (!inode_bitmap.get_status(inode_n)) {
         return fs_nullptr;
     }
 
@@ -208,7 +208,7 @@ void MemoryIO::scan_blocks() {
         if (inode.meta().type != block_status::Used) {
             continue;
         }
-        inode_bitmap.set_block(inode_n, 1);
+        inode_bitmap.set_status(inode_n, 1);
 
         set_data_blocks_status(inode_n, 1);
     }

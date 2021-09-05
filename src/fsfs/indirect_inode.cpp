@@ -58,7 +58,7 @@ fsize IndirectInode::commit(Block& data_block, BlockBitmap& data_bitmap, PtrsLLi
             clear();
             return n_new_ptrs - n_to_write;
         }
-        data_bitmap.set_block(new_block_addr, 1);
+        data_bitmap.set_status(new_block_addr, 1);
         address addr = data_block.data_n_to_block_n(indirect_block_n.front());
         indirect_block_n.push_front(new_block_addr);
 

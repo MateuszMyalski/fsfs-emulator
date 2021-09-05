@@ -91,7 +91,7 @@ class MemoryIOTest : public ::testing::TestWithParam<fsize>, public TestBaseFile
 
     void add_data_ptr(BlockBitmap& bitmap, Inode& inode) {
         auto block_n = bitmap.next_free(0);
-        bitmap.set_block(block_n, 1);
+        bitmap.set_status(block_n, 1);
         inode.add_data(block_n);
     }
 };
@@ -239,17 +239,17 @@ TEST_P(MemoryIOTest, write_with_offset_and_overflown_length) {
 
 TEST_P(MemoryIOTest, scan_blocks) {
     for (const auto inode_n : used_inode_blocks) {
-        EXPECT_TRUE(io->get_inode_bitmap().get_block_status(inode_n));
+        EXPECT_TRUE(io->get_inode_bitmap().get_status(inode_n));
     }
     for (auto inode_n = 0; inode_n < MB.n_inode_blocks; inode_n++) {
         if (std::find(used_inode_blocks.begin(), used_inode_blocks.end(), inode_n) != used_inode_blocks.end()) {
             continue;
         }
-        EXPECT_FALSE(io->get_inode_bitmap().get_block_status(inode_n));
+        EXPECT_FALSE(io->get_inode_bitmap().get_status(inode_n));
     }
 
     for (auto i = 0; i < MB.n_data_blocks; i++) {
-        EXPECT_EQ(io->get_data_bitmap().get_block_status(i), data_bitmap->get_block_status(i));
+        EXPECT_EQ(io->get_data_bitmap().get_status(i), data_bitmap->get_status(i));
     }
 }
 
@@ -263,7 +263,7 @@ TEST_P(MemoryIOTest, alloc_inode_valid_data) {
     constexpr const char* inode_name = "Inode name";
     ASSERT_LT(strnlen(inode_name, meta_file_name_len), meta_file_name_len);
     auto inode_n = io->alloc_inode(inode_name);
-    EXPECT_TRUE(io->get_inode_bitmap().get_block_status(inode_n));
+    EXPECT_TRUE(io->get_inode_bitmap().get_status(inode_n));
 }
 
 TEST_P(MemoryIOTest, dealloc_inode_invalid_inode) {
@@ -274,11 +274,11 @@ TEST_P(MemoryIOTest, dealloc_inode_invalid_inode) {
 TEST_P(MemoryIOTest, dealloc_inode) {
     constexpr address inode_to_dealloc = 2;
     EXPECT_EQ(io->dealloc_inode(inode_to_dealloc), inode_to_dealloc);
-    EXPECT_FALSE(io->get_inode_bitmap().get_block_status(inode_to_dealloc));
+    EXPECT_FALSE(io->get_inode_bitmap().get_status(inode_to_dealloc));
 
     auto n_dealocated_blocks = 0;
     for (auto i = 0; i < MB.n_data_blocks; i++) {
-        if (io->get_data_bitmap().get_block_status(i) != data_bitmap->get_block_status(i)) {
+        if (io->get_data_bitmap().get_status(i) != data_bitmap->get_status(i)) {
             n_dealocated_blocks++;
         }
     }

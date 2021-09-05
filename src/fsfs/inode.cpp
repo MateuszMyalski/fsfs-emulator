@@ -101,7 +101,7 @@ fsize Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
                     clear();
                     return n_written;
                 }
-                data_bitmap.set_block(new_block_n, 1);
+                data_bitmap.set_status(new_block_n, 1);
                 meta().indirect_inode_ptr = new_block_n;
                 inode.indirect_inode_ptr = new_block_n;
             }

@@ -27,22 +27,24 @@ void BlockBitmap::init(address n_blocks) {
         throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
 
+    // Step 1: calculate needed space and prepare free
+    //
     this->n_blocks = n_blocks;
     fsize map_size = n_blocks / bitmap_row_length;
     if ((n_blocks - map_size * bitmap_row_length) > 0) {
         map_size += 1;
     }
-
     bitmap.resize(map_size);
-
     std::fill_n(bitmap.data(), map_size, 0x00);
 
+    // Step 2: Set as no free additional unused blocks
+    //
     fsize n_unused_bits = map_size * bitmap_row_length - n_blocks;
     bitmap_t unused_bits_mask = (1UL << n_unused_bits) - 1;
     bitmap.at(map_size - 1) = unused_bits_mask << (std::numeric_limits<bitmap_t>::digits - n_unused_bits - 1);
 }
 
-void BlockBitmap::set_block(address block_n, bool status) {
+void BlockBitmap::set_status(address block_n, bool status) {
     if (block_n < 0) {
         throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
@@ -55,7 +57,6 @@ void BlockBitmap::set_block(address block_n, bool status) {
     bitmap_t* block_map = get_map_row(block_n);
 
     int32_t mask_shift = bitmap_row_length - calc_pos(block_n);
-
     if (status) {
         *block_map |= (mask >> mask_shift);
     } else {
@@ -63,7 +64,7 @@ void BlockBitmap::set_block(address block_n, bool status) {
     }
 }
 
-bool BlockBitmap::get_block_status(address block_n) const {
+bool BlockBitmap::get_status(address block_n) const {
     if (block_n < 0) {
         throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
@@ -76,7 +77,6 @@ bool BlockBitmap::get_block_status(address block_n) const {
     auto block_map = get_map_row(block_n);
 
     int32_t mask_shift = bitmap_row_length - calc_pos(block_n);
-
     return block_map & (mask >> mask_shift);
 }
 
@@ -89,6 +89,8 @@ address BlockBitmap::next_free(address block_offset) const {
         throw std::runtime_error("Block offset is greater than block map size.");
     }
 
+    // Step 1: Find row in bitmap with free blocks
+    //
     size_t row = block_offset / bitmap_row_length;
     for (; row < bitmap.size(); row++) {
         if (bitmap.at(row) != std::numeric_limits<bitmap_t>::max()) {
@@ -96,14 +98,18 @@ address BlockBitmap::next_free(address block_offset) const {
         }
     }
 
+    // Step 2: Check if no free blocks
+    //
     if (row == bitmap.size()) {
         return -1;
     }
 
+    // Step 3: Find free block in row
+    //
     address pos_offset = calc_pos(block_offset);
     address real_idx = row * bitmap_row_length + pos_offset;
     for (auto i = pos_offset; i < bitmap_row_length; i++) {
-        if (!get_block_status(real_idx)) {
+        if (!get_status(real_idx)) {
             break;
         }
         real_idx++;

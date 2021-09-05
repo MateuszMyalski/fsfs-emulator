@@ -129,7 +129,7 @@ TEST_P(IndirectInodeTest, add_data_and_commit_with_no_free_space) {
     constexpr auto n_free_blocks = 1;
     BlockBitmap data_bitmap(MB.n_data_blocks);
     for (auto i = 0; i < MB.n_data_blocks - n_free_blocks; i++) {
-        data_bitmap.set_block(i, 1);
+        data_bitmap.set_status(i, 1);
     }
 
     std::vector<address> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
