@@ -43,6 +43,7 @@ class IndirectInodeTest : public ::testing::TestWithParam<fsize>, public TestBas
         delete data_block;
     }
 
+   private:
     void store_indirect(address block_n, address* ptrs_list, address next_indirect_addr) {
         data_block->write(block_n, cast_to_data(ptrs_list), 0, block_size - sizeof(address));
         data_block->write(block_n, cast_to_data(&next_indirect_addr), block_size - sizeof(address), sizeof(address));
