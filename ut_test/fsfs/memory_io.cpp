@@ -301,5 +301,93 @@ TEST_P(MemoryIOTest, rename_inode) {
     EXPECT_STREQ(file_name, file_name_ref2);
 }
 
+TEST_P(MemoryIOTest, read_invalid_inode) {
+    DataBufferType rdata(1);
+    address invalid_inode = MB.n_inode_blocks - 1;
+    EXPECT_EQ(io->read_data(invalid_inode, rdata.data(), 0, 1), fs_nullptr);
+}
+
+TEST_P(MemoryIOTest, read_invalid_length) {
+    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    DataBufferType ref_data(data_len);
+    DataBufferType rdata(data_len);
+    fill_dummy(ref_data);
+
+    address inode_n = io->alloc_inode(valid_file_name);
+    io->write_data(inode_n, ref_data.data(), 0, data_len);
+
+    fsize n_read = io->read_data(inode_n, rdata.data(), 0, data_len + 1);
+    EXPECT_EQ(n_read, data_len);
+
+    EXPECT_TRUE(cmp_data(rdata, ref_data));
+}
+
+TEST_P(MemoryIOTest, read_offset) {
+    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    DataBufferType ref_data(data_len);
+    DataBufferType rdata(data_len);
+    fill_dummy(ref_data);
+
+    auto offset = block_size / 4;
+    address inode_n = io->alloc_inode(valid_file_name);
+    io->write_data(inode_n, ref_data.data(), 0, data_len);
+
+    fsize n_read = io->read_data(inode_n, rdata.data(), offset, data_len);
+    EXPECT_EQ(n_read, data_len - offset);
+
+    EXPECT_TRUE(cmp_data(rdata.data(), ref_data.data(), n_read));
+}
+TEST_P(MemoryIOTest, read_offset_length_greater_than_file_length) {
+    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    DataBufferType ref_data(data_len);
+    DataBufferType rdata(data_len);
+    fill_dummy(ref_data);
+
+    auto offset = block_size / 4;
+    address inode_n = io->alloc_inode(valid_file_name);
+    io->write_data(inode_n, ref_data.data(), 0, data_len);
+
+    fsize n_read = io->read_data(inode_n, rdata.data(), offset, data_len);
+    EXPECT_EQ(n_read, data_len - offset);
+
+    EXPECT_TRUE(cmp_data(rdata.data(), ref_data.data(), n_read));
+}
+
+TEST_P(MemoryIOTest, read_offset_greater_than_length) {
+    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    DataBufferType ref_data(data_len);
+    DataBufferType rdata(data_len);
+    fill_dummy(ref_data);
+
+    address inode_n = io->alloc_inode(valid_file_name);
+    io->write_data(inode_n, ref_data.data(), 0, data_len);
+
+    fsize n_read = io->read_data(inode_n, rdata.data(), data_len - 1, data_len);
+    EXPECT_EQ(n_read, data_len);
+
+    EXPECT_TRUE(cmp_data(rdata.data(), ref_data.data(), n_read));
+}
+
+TEST_P(MemoryIOTest, read_buffer_content_consistency) {
+    constexpr auto guard_value = static_cast<DataBufferType::value_type>(0xDEAD);
+    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    DataBufferType ref_data(data_len);
+    DataBufferType rdata(data_len);
+    fill_n(rdata, data_len, guard_value);
+    fill_dummy(ref_data);
+
+    auto data_to_read = data_len / 2;
+    address inode_n = io->alloc_inode(valid_file_name);
+    io->write_data(inode_n, ref_data.data(), 0, data_len);
+
+    fsize n_read = io->read_data(inode_n, rdata.data(), 0, data_to_read);
+    EXPECT_EQ(n_read, data_to_read);
+
+    EXPECT_TRUE(cmp_data(rdata.data(), ref_data.data(), n_read));
+    for (auto i = data_to_read; i < data_len; i++) {
+        EXPECT_EQ(rdata[i], guard_value);
+    }
+}
+
 INSTANTIATE_TEST_SUITE_P(BlockSize, MemoryIOTest, testing::ValuesIn(valid_block_sizes));
 }
