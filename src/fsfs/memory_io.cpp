@@ -84,7 +84,7 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
         return n_eddited_bytes;
     }
 
-    // Step 2: Prepare inforamtions to allocate new data blocks
+    // Step 2: Prepare informations to allocate new data blocks
     //
     const data* wdata_new_p = &wdata[n_eddited_bytes];
     fsize n_written = 0;
@@ -126,7 +126,7 @@ fsize MemoryIO::write_data(address inode_n, const data* wdata, fsize offset, fsi
     return n_written + n_eddited_bytes;
 }
 
-address MemoryIO::read_data(address inode_n, const data* wdata, address offset, fsize length) {
+address MemoryIO::read_data(address inode_n, data* rdata, address offset, fsize length) {
     if (!inode_bitmap.get_status(inode_n)) {
         return fs_nullptr;
     }
@@ -135,7 +135,40 @@ address MemoryIO::read_data(address inode_n, const data* wdata, address offset, 
         return 0;
     }
 
-    // TODO ...
+    fsize n_read = 0;
+
+    // Step 1: Load inode & calculate absolute offset
+    //
+    inode.load(inode_n, block);
+
+    if ((offset < 0) || (offset > inode.meta().file_len)) {
+        return fs_nullptr;
+    }
+
+    // Step 2: Calculate absolute offset & max length to read
+    //
+    if (offset + length > inode.meta().file_len) {
+        length = inode.meta().file_len - offset;
+    }
+    address offset_ptr = std::max(0, block.bytes_to_blocks(offset) - 1);
+
+    // Step 3 : Read first block and attach to the rdata buffor
+    //
+    address addr = block.data_n_to_block_n(inode.ptr(offset_ptr));
+    fsize first_offset = offset % block.get_block_size();
+    fsize to_read = std::min(length, MB.block_size - first_offset);
+    n_read += block.read(addr, &rdata[n_read], first_offset, to_read);
+    offset_ptr += 1;
+
+    // Step 4: Read N full blocks and attach to the rdata buffor
+    //
+    for (fsize ptr_n = 0; n_read < length; ptr_n++) {
+        addr = block.data_n_to_block_n(inode.ptr(offset_ptr + ptr_n));
+        to_read = std::min(length - n_read, MB.block_size);
+        n_read += block.read(addr, &rdata[n_read], 0, to_read);
+    }
+
+    return n_read;
 }
 
 address MemoryIO::alloc_inode(const char* file_name) {

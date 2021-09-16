@@ -45,7 +45,7 @@ class MemoryIO {
     address get_inode_file_name(address inode_n, char* file_name_buffer);
 
     fsize write_data(address inode_n, const data* wdata, address offset, fsize length);
-    fsize read_data(address inode_n, const data* wdata, address offset, fsize length);
+    fsize read_data(address inode_n, data* rdata, address offset, fsize length);
 
     void scan_blocks();
 
