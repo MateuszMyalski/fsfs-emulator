@@ -2,13 +2,13 @@
 
 ## DoD
 - **F**lash **S**imple **F**ile **S**ystem
-  - [ ] based on chunks of memory that can be selected ~~at the compile time~~
-    - [ ] chunk size 1024kb
-    - [ ] chunk size 2048kb
-    - [ ] chunk size 4096kb
+  - [X] based on chunks of memory that can be selected ~~at the compile time~~
+    - [X] chunk size 1024kb
+    - [X] chunk size 2048kb
+    - [X] chunk size 4096kb
   - [ ] C++ style interface
-    - [ ] `read` - reads selected lenght of data from given inode with respect to given offset
-    - [ ] `write` - writes to inode with selected lenght of data with respect to offset, also allocate another inodes if necessary
+    - [X] `read` - reads selected lenght of data from given inode with respect to given offset
+    - [X] `write` - writes to inode with selected lenght of data with respect to offset, also allocate another inodes if necessary
     - [ ] `stats` - print all reports of the file system 
     - [X] `format` - formats the disk and initialzie propper file system structure
     - [X] `mount` - checks the integrity of the file system
@@ -41,9 +41,9 @@
     - [X] `write`
     - [X] `mount`
     - [X] size getters
-  - [ ] File system
-    - [ ] `read`
-    - [ ] `write`
+  - [X] File system
+    - [X] `read`
+    - [X] `write`
     - [ ] `stats`
     - [X] `format`
     - [X] `mount`
