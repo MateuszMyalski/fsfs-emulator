@@ -1,5 +1,6 @@
 #ifndef UT_TEST_TEST_BASE_HPP
 #define UT_TEST_TEST_BASE_HPP
+#include <cstring>
 #include <exception>
 #include <vector>
 
@@ -73,7 +74,6 @@ class TestBaseFileSystem : public TestBaseDisk {
     TestBaseFileSystem() : TestBaseDisk(), file_system(disk) {
         FileSystem::format(disk);
         FileSystem::read_super_block(disk, MB);
-        // TODO ...
     }
     ~TestBaseFileSystem() {}
 };
