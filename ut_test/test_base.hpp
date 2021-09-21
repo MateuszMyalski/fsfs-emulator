@@ -73,7 +73,7 @@ class TestBaseFileSystem : public TestBaseDisk {
    public:
     TestBaseFileSystem() : TestBaseDisk(), file_system(disk) {
         FileSystem::format(disk);
-        FileSystem::read_super_block(disk, MB);
+        disk.read(fs_offset_super_block, cast_to_data(&MB), sizeof(super_block));
     }
     ~TestBaseFileSystem() {}
 };

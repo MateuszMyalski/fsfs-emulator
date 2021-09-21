@@ -97,6 +97,7 @@ class FileSystemTest : public ::testing::TestWithParam<fsize>, public TestBaseFi
 };
 
 TEST_P(FileSystemTest, format) {
+    // Calculate demanded values
     fsize real_disk_size = disk.get_disk_size() - 1;
     fsize n_inode_blocks = real_disk_size * 0.1;
     fsize n_data_blocks = real_disk_size - n_inode_blocks;

@@ -18,10 +18,11 @@ class FileSystem {
     Block block;
     Inode inode;
 
-    void set_data_blocks_status(address inode_n, bool status);
+    static void read_super_block(Disk& disk, super_block& MB);
     static uint32_t calc_mb_checksum(super_block& MB);
     fsize edit_data(address inode_n, const data* wdata, fsize offset, fsize length);
     void scan_blocks();
+    void set_data_blocks_status(address inode_n, bool status);
 
     template <typename Self>
     static decltype(auto) get_inode_bitmap_common(Self* self) {
@@ -37,7 +38,6 @@ class FileSystem {
     FileSystem(Disk& disk) : disk(disk), MB(), inode_bitmap(), data_bitmap(), block(disk, MB), inode(){};
 
     static void format(Disk& disk);
-    static void read_super_block(Disk& disk, super_block& MB);
 
     void mount();
     void unmount();
