@@ -47,33 +47,31 @@ void FileSystem::read_super_block(Disk& disk, super_block& MB) {
 void FileSystem::unmount() { disk.unmount(); }
 
 void FileSystem::format(Disk& disk) {
-    disk.mount();
-
     fsize real_disk_size = disk.get_disk_size() - 1;
-    fsize meta_blocks = disk.get_block_size() / meta_fragm_size_bytes;
-    fsize n_inode_blocks = real_disk_size * 0.1;
-    std::vector<meta_block> block(meta_blocks);
 
-    std::copy_n(meta_magic_seq_lut, fs_data_row_size, block[0].MB.magic_number);
-    block[0].MB.block_size = disk.get_block_size();
-    block[0].MB.n_blocks = disk.get_disk_size();
-    block[0].MB.n_inode_blocks = n_inode_blocks;
-    block[0].MB.n_data_blocks = real_disk_size - n_inode_blocks;
-    block[0].MB.fs_ver_major = fs_system_major;
-    block[0].MB.fs_ver_minor = fs_system_minor;
-    block[0].MB.checksum = calc_mb_checksum(block[0].MB);
-    disk.write(fs_offset_super_block, block[0].raw_data, meta_fragm_size_bytes);
+    super_block MB_to_write = {};
+    MB_to_write.block_size = disk.get_block_size();
+    MB_to_write.n_blocks = disk.get_disk_size();
+    MB_to_write.n_inode_blocks = real_disk_size * 0.1;
+    MB_to_write.n_data_blocks = real_disk_size - MB_to_write.n_inode_blocks;
+    MB_to_write.fs_ver_major = fs_system_major;
+    MB_to_write.fs_ver_minor = fs_system_minor;
+    memcpy(MB_to_write.magic_number, meta_magic_seq_lut, sizeof(meta_magic_seq_lut));
+    MB_to_write.checksum = calc_mb_checksum(MB_to_write);
 
-    std::fill(block.begin(), block.end(), fs_nullptr);
-    for (auto i = 0; i < meta_blocks; i++) {
-        block[i].inode.status = block_status::Free;
-        std::memcpy(block[i].inode.file_name, inode_default_file_name, meta_max_file_name_size);
-    }
-    for (auto i = 0; i < n_inode_blocks; i++) {
-        disk.write(fs_offset_inode_block + i, cast_to_data(block.data()), disk.get_block_size());
-    }
-
+    disk.mount();
+    disk.write(fs_offset_super_block, cast_to_data(&MB_to_write), meta_fragm_size_bytes);
     disk.unmount();
+
+    Inode inode;
+    Block block(disk, MB_to_write);
+    BlockBitmap dummy_bitmap(real_disk_size);
+    for (address inode_n = 0; inode_n < MB_to_write.n_inode_blocks; inode_n++) {
+        inode.load(inode_n, block);
+        inode.meta().status = block_status::Free;
+        inode.meta().file_len = 0;
+        inode.commit(block, dummy_bitmap);
+    }
 }
 
 uint32_t FileSystem::calc_mb_checksum(super_block& MB) {

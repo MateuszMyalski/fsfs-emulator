@@ -76,15 +76,15 @@ class FileSystemTest : public ::testing::TestWithParam<fsize>, public TestBaseFi
 
    private:
     void add_inode(BlockBitmap& bitmap, address inode_n, fsize dummy_length) {
-        Block data_block(disk, MB);
+        Block block(disk, MB);
         Inode inode;
 
         inode.alloc_new(inode_n);
         inode.meta().file_len = dummy_length;
-        for (auto i = 0; i < data_block.bytes_to_blocks(dummy_length); i++) {
+        for (auto i = 0; i < block.bytes_to_blocks(dummy_length); i++) {
             add_data_ptr(bitmap, inode);
         }
-        inode.commit(data_block, bitmap);
+        inode.commit(block, bitmap);
 
         used_inode_blocks.push_back(inode_n);
     }
@@ -98,6 +98,7 @@ class FileSystemTest : public ::testing::TestWithParam<fsize>, public TestBaseFi
 
 TEST_P(FileSystemTest, format) {
     // Calculate demanded values
+    //
     fsize real_disk_size = disk.get_disk_size() - 1;
     fsize n_inode_blocks = real_disk_size * 0.1;
     fsize n_data_blocks = real_disk_size - n_inode_blocks;
@@ -105,38 +106,34 @@ TEST_P(FileSystemTest, format) {
 
     FileSystem::format(disk);
 
+    // Super block check
+    //
     disk.mount();
     DataBufferType r_data(block_size);
     auto n_read = disk.read(fs_offset_super_block, r_data.data(), block_size);
     ASSERT_EQ(n_read, block_size);
 
-    super_block* MB = reinterpret_cast<super_block*>(r_data.data());
-    EXPECT_EQ(MB[0].magic_number[0], meta_magic_seq_lut[0]);
-    EXPECT_EQ(MB[0].magic_number[1], meta_magic_seq_lut[1]);
-    EXPECT_EQ(MB[0].magic_number[2], meta_magic_seq_lut[2]);
-    EXPECT_EQ(MB[0].magic_number[3], meta_magic_seq_lut[3]);
-    EXPECT_EQ(MB[0].n_blocks, disk.get_disk_size());
-    EXPECT_EQ(MB[0].n_data_blocks, n_data_blocks);
-    EXPECT_EQ(MB[0].n_inode_blocks, n_inode_blocks);
-    EXPECT_EQ(MB[0].fs_ver_major, fs_system_major);
-    EXPECT_EQ(MB[0].fs_ver_minor, fs_system_minor);
-
-    for (auto i = 0; i < n_inode_blocks; i++) {
-        address block_n = i / n_meta_blocks_in_block + fs_offset_inode_block;
-        n_read = disk.read(block_n, r_data.data(), block_size);
-        ASSERT_EQ(n_read, block_size);
-
-        for (auto j = 0; j < block_size / meta_fragm_size_bytes; j++) {
-            inode_block* test_inode = reinterpret_cast<inode_block*>(r_data.data());
-            for (auto ptr_idx = 0; ptr_idx < meta_n_direct_ptrs; ptr_idx++) {
-                EXPECT_EQ(test_inode[j].direct_ptr[ptr_idx], fs_nullptr);
-            }
-            EXPECT_STREQ(test_inode[j].file_name, inode_default_file_name);
-            EXPECT_EQ(test_inode[j].status, block_status::Free);
-            EXPECT_EQ(test_inode[j].indirect_inode_ptr, fs_nullptr);
-        }
-    }
+    super_block* rMB = reinterpret_cast<super_block*>(r_data.data());
+    EXPECT_EQ(rMB[0].magic_number[0], meta_magic_seq_lut[0]);
+    EXPECT_EQ(rMB[0].magic_number[1], meta_magic_seq_lut[1]);
+    EXPECT_EQ(rMB[0].magic_number[2], meta_magic_seq_lut[2]);
+    EXPECT_EQ(rMB[0].magic_number[3], meta_magic_seq_lut[3]);
+    EXPECT_EQ(rMB[0].n_blocks, disk.get_disk_size());
+    EXPECT_EQ(rMB[0].n_data_blocks, n_data_blocks);
+    EXPECT_EQ(rMB[0].n_inode_blocks, n_inode_blocks);
+    EXPECT_EQ(rMB[0].fs_ver_major, fs_system_major);
+    EXPECT_EQ(rMB[0].fs_ver_minor, fs_system_minor);
     disk.unmount();
+
+    // Inode check
+    //
+    Block block(disk, MB);
+    Inode inode;
+    for (auto i = 0; i < n_inode_blocks; i++) {
+        inode.load(i, block);
+        EXPECT_EQ(inode.meta().status, block_status::Free);
+        EXPECT_EQ(inode.meta().file_len, 0);
+    }
 }
 
 TEST_P(FileSystemTest, write_invalid_inode) {
