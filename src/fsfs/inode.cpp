@@ -68,8 +68,8 @@ void Inode::alloc_new(address inode_n) {
     inode_buf.file_len = 0;
     inode_buf.file_name[0] = '\0';
     inode_buf.indirect_inode_ptr = fs_nullptr;
-    for (auto& ptr_n : inode_buf.direct_ptr) {
-        ptr_n = fs_nullptr;
+    for (address i = 0; i < meta_n_direct_ptrs; i++) {
+        inode_buf.direct_ptr[i] = fs_nullptr;
     }
 
     memcpy(&inode, &inode_buf, sizeof(inode_block));

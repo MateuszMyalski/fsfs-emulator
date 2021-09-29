@@ -31,11 +31,10 @@ struct super_block {
     fsize n_data_blocks;
     int16_t fs_ver_major;
     int16_t fs_ver_minor;
-    data _padding[35];
+    data _padding[36];
     uint32_t checksum;
-};
+} __attribute__((aligned(fs_data_row_size)));
 static_assert(sizeof(super_block) == meta_fragm_size_bytes);
-
 struct inode_block {
     block_status status;
     data _padding[3];
@@ -43,16 +42,7 @@ struct inode_block {
     fsize file_len;
     address direct_ptr[meta_n_direct_ptrs];
     address indirect_inode_ptr;
-};
+} __attribute__((aligned(fs_data_row_size)));
 static_assert(sizeof(inode_block) == meta_fragm_size_bytes);
-
-union meta_block {
-    super_block MB;
-    inode_block inode;
-    data raw_data[meta_fragm_size_bytes];
-
-    void operator=(data fill_data) { std::fill(raw_data, &raw_data[meta_fragm_size_bytes], fill_data); }
-};
-static_assert(sizeof(meta_block) == meta_fragm_size_bytes);
 }
 #endif
