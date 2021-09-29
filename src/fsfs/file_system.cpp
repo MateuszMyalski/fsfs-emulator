@@ -196,9 +196,10 @@ fsize FileSystem::write(address inode_n, const data* wdata, fsize offset, fsize 
     // Step 5: Update inode meta
     //
     inode.meta().file_len += n_written;
-    inode.commit(block, data_bitmap);
-    // TODO add check form inode commit
-
+    fsize n_ptrs_written = inode.commit(block, data_bitmap);
+    if (n_ptrs_written != block.bytes_to_blocks(n_written - free_bytes)) {
+        throw std::runtime_error("Cannot create indirect block for some pointers.");
+    }
     return n_written + n_eddited_bytes;
 }
 
