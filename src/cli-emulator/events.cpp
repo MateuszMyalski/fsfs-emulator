@@ -6,7 +6,7 @@
 namespace FSFS {
 namespace {
 void display_critical_error(const std::exception& e) {
-    fprintf(stdout, "Critical error occured with message:\n\t%s\nAction terminated!", e.what());
+    fprintf(stdout, "Critical error occured with message:\n\t%s\nAction terminated!\n", e.what());
 }
 }
 void event_invalid_parsing() {
