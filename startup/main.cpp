@@ -18,12 +18,10 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
             FSFS::event_display_files(args.disk_path, args.block_size);
             break;
         case FSFS::ActionType::WRITE_DATA:
-            FSFS::event_write_data(args.disk_path, args.block_size, args.in_file_name, args.file_inode, args.offset,
-                                   args.length);
+            FSFS::event_write_data(args.disk_path, args.block_size, args.in_file_name, args.file_inode);
             break;
         case FSFS::ActionType::READ_DATA:
-            FSFS::event_write_data(args.disk_path, args.block_size, args.in_file_name, args.file_inode, args.offset,
-                                   args.length);
+            FSFS::event_write_data(args.disk_path, args.block_size, args.in_file_name, args.file_inode);
             break;
         case FSFS::ActionType::DELETE_FILE:
             FSFS::event_delete_file(args.disk_path, args.block_size, args.file_inode);

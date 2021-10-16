@@ -29,10 +29,9 @@ class OptParser {
         char* disk_path = nullptr;
         char* in_file_name = nullptr;
         char* out_file_name = nullptr;
-        int offset = -1;
         int block_size = -1;
-        int length = -1;
         int file_inode = -1;
+        int length = -1;
     } parsed_args;
 };
 }

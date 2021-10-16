@@ -35,7 +35,10 @@ class FileSystem {
     }
 
    public:
-    FileSystem(Disk& disk) : disk(disk), MB(), inode_bitmap(), data_bitmap(), block(disk, MB), inode(){};
+    FileSystem(Disk& disk)
+        : disk(disk), MB(), inode_bitmap(), data_bitmap(), block(disk, MB), inode(){
+        MB.block_size = -1;
+    };
 
     static void format(Disk& disk);
 
@@ -54,6 +57,9 @@ class FileSystem {
 
     decltype(auto) get_inode_bitmap() const { return get_inode_bitmap_common(this); }
     decltype(auto) get_data_bitmap() const { return get_data_bitmap_common(this); }
+
+    int32_t get_inode_blocks_ammount() { return MB.block_size != -1 ? MB.n_inode_blocks : -1; }
+    int32_t get_data_blocks_ammount() { return MB.block_size != -1 ? MB.n_data_blocks : -1; }
 };
 }
 #endif

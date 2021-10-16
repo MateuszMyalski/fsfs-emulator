@@ -8,7 +8,7 @@ OptParser::OptParser(int argc, char* const* argv) { parse(argc, argv); }
 
 void OptParser::parse(int argc, char* const* argv) {
     int opt;
-    while ((opt = getopt(argc, argv, "h:c:r:w:x:l:d:f:b:s:i:o:p:n:")) != -1) {
+    while ((opt = getopt(argc, argv, "h:c:r:w:x:l:d:f:b:s:i:o:n:q:")) != -1) {
         switch (opt) {
             case 'h':
                 if (action_type == ActionType::INVALID_PARSING) {
@@ -51,6 +51,12 @@ void OptParser::parse(int argc, char* const* argv) {
                     parsed_args.disk_path = optarg;
                 }
                 break;
+            case 'q':
+                if (action_type == ActionType::INVALID_PARSING) {
+                    action_type = ActionType::RENAME_FILE;
+                    parsed_args.disk_path = optarg;
+                }
+                break;
             case 'f':
                 if (action_type == ActionType::INVALID_PARSING) {
                     action_type = ActionType::FORMAT_DISK;
@@ -69,9 +75,6 @@ void OptParser::parse(int argc, char* const* argv) {
             case 'o':
                 parsed_args.out_file_name = optarg;
                 break;
-            case 'p':
-                parsed_args.offset = atoi(optarg);
-                break;
             case 'n':
                 parsed_args.file_inode = atoi(optarg);
                 break;
@@ -87,30 +90,31 @@ void OptParser::print_help(FILE* buff) {
         "Flash File System Emulator\n"
         "POC by Mateusz Waldemar Myalski 2021\n"
         "==============================\n"
+        "The CLI allows to pack and unpack binary data. Features for writting/reading offests are avilable only "
+        "through C++ API. The file system is based on inode numbers where files are stored. "
+        "Filename is optional and helps in saving file extension."
         "Usage: fsfs <option> <args>\n"
         "Options:\n"
         "\t-h : Displays this panel.\n"
         "\t-c <disk_path> -b <block_size> -s <size> : Creates new disk with given block size and size.\n"
-        "\t-r <disk_path> -n <file_inode> -o <output_file> : Export input file from disk and save it "
+        "\t-r <disk_path> -n <file_inode> -o <output_file> : Export file from disk and save it "
         "as output file.\n"
-        "\t\t Optional: (file must already exist): -p <offset> -s <length>\n"
-        "\t-w <disk_path> -n <file_inode> -o <output_file> : Write input file and save it on disk as output file.\n"
-        "\t\t Optional: -i <file_name>\n"
-        "\t\t Optional (file must already exist): -p <offset> -s <length>\n"
+        "\t-w <disk_path> -n <file_inode> -i <file_name> : Write input file and save it on disk. "
+        "To set file name use -f option"
+        "If file already exists the data will be appended to the end.\n"
         "\t-x <disk_path> : Displays stats about disk.\n"
         "\t\t Optional: -n <file_inode>\n"
         "\t-l <disk_path> : Displays all stored files.\n"
         "\t-d <disk_path> -n <file_inode> : Delete file.\n"
         "\t-f <disk_path> -b <block_size> : Format disk.\n"
-        "\t-r <disk_path> -n <file_inode> -i <new_file_name> : Rename file.\n"
+        "\t-q <disk_path> -n <file_inode> -i <new_file_name> : Rename file.\n"
         "\n"
         "Args:\n"
         "\t-b : Block size in kb.\n"
         "\t-s : Size (must be multiply of block size) in kb.\n"
         "\t-i : Input file name.\n"
         "\t-n : File inode index.\n"
-        "\t-o : Output file name.\n"
-        "\t-p : Offset from end.\n";
+        "\t-o : Output file name.\n";
 
     fprintf(buff, "%s", help);
 }
