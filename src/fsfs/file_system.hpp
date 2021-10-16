@@ -20,9 +20,9 @@ class FileSystem {
 
     static void read_super_block(Disk& disk, super_block& MB);
     static uint32_t calc_mb_checksum(super_block& MB);
-    fsize edit_data(address inode_n, const data* wdata, fsize offset, fsize length);
+    int32_t edit_data(int32_t inode_n, const uint8_t* wdata, int32_t offset, int32_t length);
     void scan_blocks();
-    void set_data_blocks_status(address inode_n, bool status);
+    void set_data_blocks_status(int32_t inode_n, bool status);
 
     template <typename Self>
     static decltype(auto) get_inode_bitmap_common(Self* self) {
@@ -42,15 +42,15 @@ class FileSystem {
     void mount();
     void unmount();
 
-    address create_file(const char* file_name);
-    address remove_file(address inode_n);
+    int32_t create_file(const char* file_name);
+    int32_t remove_file(int32_t inode_n);
 
-    address rename_file(address inode_n, const char* file_name);
-    fsize get_file_length(address inode_n);
-    address get_file_name(address inode_n, char* file_name_buffer);
+    int32_t rename_file(int32_t inode_n, const char* file_name);
+    int32_t get_file_length(int32_t inode_n);
+    int32_t get_file_name(int32_t inode_n, char* file_name_buffer);
 
-    fsize write(address inode_n, const data* wdata, address offset, fsize length);
-    fsize read(address inode_n, data* rdata, address offset, fsize length);
+    int32_t write(int32_t inode_n, const uint8_t* wdata, int32_t offset, int32_t length);
+    int32_t read(int32_t inode_n, uint8_t* rdata, int32_t offset, int32_t length);
 
     decltype(auto) get_inode_bitmap() const { return get_inode_bitmap_common(this); }
     decltype(auto) get_data_bitmap() const { return get_data_bitmap_common(this); }

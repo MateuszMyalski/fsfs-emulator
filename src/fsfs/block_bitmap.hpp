@@ -9,24 +9,24 @@ namespace FSFS {
 using bitmap_t = uint64_t;
 class BlockBitmap {
    private:
-    address n_blocks;
+    int32_t n_blocks;
     std::vector<bitmap_t> bitmap;
 
     constexpr static auto bitmap_row_length = std::numeric_limits<bitmap_t>::digits;
 
-    inline address calc_pos(address block_n) const;
-    const bitmap_t& get_map_row(address block_n) const;
-    bitmap_t* get_map_row(address block_n);
+    inline int32_t calc_pos(int32_t block_n) const;
+    const bitmap_t& get_map_row(int32_t block_n) const;
+    bitmap_t* get_map_row(int32_t block_n);
 
    public:
     BlockBitmap() : n_blocks(-1){};
-    BlockBitmap(fsize n_blocks) : n_blocks(n_blocks) { resize(n_blocks); };
+    BlockBitmap(int32_t n_blocks) : n_blocks(n_blocks) { resize(n_blocks); };
 
-    void resize(fsize n_blocks);
-    void set_status(address block_n, bool status);
-    bool get_status(address block_n) const;
+    void resize(int32_t n_blocks);
+    void set_status(int32_t block_n, bool status);
+    bool get_status(int32_t block_n) const;
 
-    address next_free(address block_offset) const;
+    int32_t next_free(int32_t block_offset) const;
 };
 }
 #endif

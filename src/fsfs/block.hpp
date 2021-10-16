@@ -11,25 +11,25 @@ class Block {
    private:
     Disk& disk;
     const super_block& MB;
-    std::vector<data> rwbuffer;
-    address casched_block;
+    std::vector<uint8_t> rwbuffer;
+    int32_t casched_block;
 
-    address read_block(address block_n);
+    int32_t read_block(int32_t block_n);
 
    public:
     Block(Disk& disk, const super_block& MB);
     ~Block();
 
     void resize();
-    fsize write(address block_n, const data* wdata, fsize offset, fsize length);
-    fsize read(address block_n, data* rdata, fsize offset, fsize length);
+    int32_t write(int32_t block_n, const uint8_t* wdata, int32_t offset, int32_t length);
+    int32_t read(int32_t block_n, uint8_t* rdata, int32_t offset, int32_t length);
 
-    fsize get_block_size();
-    fsize get_n_addreses_in_block();
-    fsize get_n_inodes_in_block();
-    address inode_n_to_block_n(address inode_n);
-    address data_n_to_block_n(address data_n);
-    fsize bytes_to_blocks(fsize length);
+    int32_t get_block_size();
+    int32_t get_n_addreses_in_block();
+    int32_t get_n_inodes_in_block();
+    int32_t inode_n_to_block_n(int32_t inode_n);
+    int32_t data_n_to_block_n(int32_t data_n);
+    int32_t bytes_to_blocks(int32_t length);
 };
 }
 #endif

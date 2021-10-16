@@ -3,7 +3,7 @@
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class BlockBitmapTest : public ::testing::TestWithParam<fsize>, public TestBaseBasic {
+class BlockBitmapTest : public ::testing::TestWithParam<int32_t>, public TestBaseBasic {
    protected:
     constexpr static auto bitmap_row_length = std::numeric_limits<bitmap_t>::digits;
 

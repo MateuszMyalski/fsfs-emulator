@@ -4,17 +4,17 @@
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class InodeTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
+class InodeTest : public ::testing::TestWithParam<int32_t>, public TestBaseFileSystem {
    protected:
     BlockBitmap data_bitmap;
     Block *data_block;
     Inode *inode;
 
-    address test_inode_n = n_meta_blocks_in_block * 2 + 1;
+    int32_t test_inode_n = n_meta_blocks_in_block * 2 + 1;
     inode_block ref_inode1 = {};
     inode_block ref_inode2 = {};
-    address ref_inode1_n = 0;
-    address ref_inode2_n = block_size / meta_fragm_size_bytes;
+    int32_t ref_inode1_n = 0;
+    int32_t ref_inode2_n = block_size / meta_fragm_size_bytes;
 
    public:
     void SetUp() override {
@@ -133,7 +133,7 @@ TEST_P(InodeTest, add_data_clear_load_direct_inode) {
 }
 
 TEST_P(InodeTest, add_data_clear_load_indirect_inode) {
-    constexpr address indirect_ptr = 123;
+    constexpr int32_t indirect_ptr = 123;
 
     inode->alloc_new(test_inode_n);
     update_meta_data(ref_inode1);

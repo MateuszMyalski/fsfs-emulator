@@ -6,15 +6,15 @@
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class FileSystemTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
+class FileSystemTest : public ::testing::TestWithParam<int32_t>, public TestBaseFileSystem {
    protected:
     std::unique_ptr<FileSystem> fs;
     std::unique_ptr<BlockBitmap> test_data_bitmap;
 
-    std::vector<address> used_inode_blocks;
+    std::vector<int32_t> used_inode_blocks;
     constexpr static const char* valid_file_name = "SampleFile";
 
-    fsize ref_nested_inode_n_ptrs = meta_n_direct_ptrs + (n_indirect_ptrs_in_block - 1) * 4;
+    int32_t ref_nested_inode_n_ptrs = meta_n_direct_ptrs + (n_indirect_ptrs_in_block - 1) * 4;
 
    public:
     void SetUp() override {
@@ -33,7 +33,7 @@ class FileSystemTest : public ::testing::TestWithParam<fsize>, public TestBaseFi
         add_inode(*test_data_bitmap, 2, ref_nested_inode_n_ptrs * block_size);
     }
 
-    bool check_block(address data_n, const DataBufferType& ref_data, DataBufferType::const_iterator& ref_data_it) {
+    bool check_block(int32_t data_n, const DataBufferType& ref_data, DataBufferType::const_iterator& ref_data_it) {
         DataBufferType rdata(block_size);
         Block block(disk, MB);
         block.read(block.data_n_to_block_n(data_n), rdata.data(), 0, block_size);
@@ -50,7 +50,7 @@ class FileSystemTest : public ::testing::TestWithParam<fsize>, public TestBaseFi
         return true;
     }
 
-    void check_stored_blocks(address inode_n, DataBufferType ref_data) {
+    void check_stored_blocks(int32_t inode_n, DataBufferType ref_data) {
         Inode inode;
         Block block(disk, MB);
         inode.load(inode_n, block);
@@ -66,7 +66,7 @@ class FileSystemTest : public ::testing::TestWithParam<fsize>, public TestBaseFi
         }
     }
 
-    void dummy_edit(address inode_n, fsize offset, fsize length, DataBufferType& ref_data) {
+    void dummy_edit(int32_t inode_n, int32_t offset, int32_t length, DataBufferType& ref_data) {
         DataBufferType edit_data(length);
         fill_dummy(edit_data);
         memcpy(&ref_data[ref_data.size() - offset], edit_data.data(), length);
@@ -75,7 +75,7 @@ class FileSystemTest : public ::testing::TestWithParam<fsize>, public TestBaseFi
     }
 
    private:
-    void add_inode(BlockBitmap& bitmap, address inode_n, fsize dummy_length) {
+    void add_inode(BlockBitmap& bitmap, int32_t inode_n, int32_t dummy_length) {
         Block block(disk, MB);
         Inode inode;
 
@@ -99,9 +99,9 @@ class FileSystemTest : public ::testing::TestWithParam<fsize>, public TestBaseFi
 TEST_P(FileSystemTest, format) {
     // Calculate demanded values
     //
-    fsize real_disk_size = disk.get_disk_size() - 1;
-    fsize n_inode_blocks = real_disk_size * 0.1;
-    fsize n_data_blocks = real_disk_size - n_inode_blocks;
+    int32_t real_disk_size = disk.get_disk_size() - 1;
+    int32_t n_inode_blocks = real_disk_size * 0.1;
+    int32_t n_data_blocks = real_disk_size - n_inode_blocks;
     ASSERT_EQ(n_inode_blocks + n_data_blocks + 1, disk.get_disk_size());
 
     FileSystem::format(disk);
@@ -137,7 +137,7 @@ TEST_P(FileSystemTest, format) {
 }
 
 TEST_P(FileSystemTest, write_invalid_inode) {
-    address invalid_inode = MB.n_inode_blocks - 1;
+    int32_t invalid_inode = MB.n_inode_blocks - 1;
     DataBufferType wdata(1);
 
     EXPECT_EQ(fs->write(invalid_inode, wdata.data(), 0, 1), fs_nullptr);
@@ -145,55 +145,55 @@ TEST_P(FileSystemTest, write_invalid_inode) {
 
 TEST_P(FileSystemTest, write_zero_size_data) {
     DataBufferType wdata(1);
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
 
     EXPECT_EQ(fs->write(inode_n, wdata.data(), 0, 0), 0);
 }
 
 TEST_P(FileSystemTest, write_even_blocks) {
-    fsize data_len = block_size * 2;
+    int32_t data_len = block_size * 2;
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
-    fsize n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
+    int32_t inode_n = fs->create_file(valid_file_name);
+    int32_t n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
     EXPECT_EQ(n_written, data_len);
 
     check_stored_blocks(inode_n, ref_data);
 }
 
 TEST_P(FileSystemTest, write_uneven_direct_blocks) {
-    fsize data_len = block_size * 2 + 1;
+    int32_t data_len = block_size * 2 + 1;
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
-    fsize n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
+    int32_t inode_n = fs->create_file(valid_file_name);
+    int32_t n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
     EXPECT_EQ(n_written, data_len);
 
     check_stored_blocks(inode_n, ref_data);
 }
 
 TEST_P(FileSystemTest, write_single_indirect_blocks) {
-    fsize data_len = block_size * meta_n_direct_ptrs + 1;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 1;
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
-    fsize n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
+    int32_t inode_n = fs->create_file(valid_file_name);
+    int32_t n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
     EXPECT_EQ(n_written, data_len);
 
     check_stored_blocks(inode_n, ref_data);
 }
 
 TEST_P(FileSystemTest, write_append_data_uneven) {
-    fsize data_len = block_size * 2 + 1;
-    fsize total_len = data_len + data_len;
+    int32_t data_len = block_size * 2 + 1;
+    int32_t total_len = data_len + data_len;
     DataBufferType ref_data(total_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
-    fsize n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
+    int32_t inode_n = fs->create_file(valid_file_name);
+    int32_t n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
     n_written += fs->write(inode_n, ref_data.data() + data_len, 0, data_len);
     EXPECT_EQ(n_written, total_len);
 
@@ -202,25 +202,25 @@ TEST_P(FileSystemTest, write_append_data_uneven) {
 
 TEST_P(FileSystemTest, write_nested_indirect_blocks) {
     Block block(disk, MB);
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size * (block.get_n_addreses_in_block() - 1);
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size * (block.get_n_addreses_in_block() - 1);
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
-    fsize n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
+    int32_t inode_n = fs->create_file(valid_file_name);
+    int32_t n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
     EXPECT_EQ(n_written, data_len);
 
     check_stored_blocks(inode_n, ref_data);
 }
 
 TEST_P(FileSystemTest, write_append_data_even) {
-    fsize data_len = block_size;
-    fsize total_len = data_len + data_len;
+    int32_t data_len = block_size;
+    int32_t total_len = data_len + data_len;
     DataBufferType ref_data(total_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
-    fsize n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
+    int32_t inode_n = fs->create_file(valid_file_name);
+    int32_t n_written = fs->write(inode_n, ref_data.data(), 0, data_len);
     n_written += fs->write(inode_n, ref_data.data() + data_len, 0, data_len);
     EXPECT_EQ(n_written, total_len);
 
@@ -228,11 +228,11 @@ TEST_P(FileSystemTest, write_append_data_even) {
 }
 
 TEST_P(FileSystemTest, write_with_offset_greater_than_edit_length) {
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
     fs->write(inode_n, ref_data.data(), 0, data_len);
 
     constexpr auto edit_data_len = 30;
@@ -242,11 +242,11 @@ TEST_P(FileSystemTest, write_with_offset_greater_than_edit_length) {
 }
 
 TEST_P(FileSystemTest, write_with_offset_same_as_edit_length) {
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
     fs->write(inode_n, ref_data.data(), 0, data_len);
 
     constexpr auto edit_data_len = 30;
@@ -256,11 +256,11 @@ TEST_P(FileSystemTest, write_with_offset_same_as_edit_length) {
 }
 
 TEST_P(FileSystemTest, write_with_offset_and_overflown_length) {
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
     fs->write(inode_n, ref_data.data(), 0, data_len);
 
     constexpr auto additional_data_len = 30;
@@ -308,12 +308,12 @@ TEST_P(FileSystemTest, alloc_inode_valid_data) {
 }
 
 TEST_P(FileSystemTest, dealloc_inode_invalid_inode) {
-    address invalid_inode_n = MB.n_inode_blocks - 1;
+    int32_t invalid_inode_n = MB.n_inode_blocks - 1;
     EXPECT_EQ(fs->remove_file(invalid_inode_n), fs_nullptr);
 }
 
 TEST_P(FileSystemTest, dealloc_inode) {
-    constexpr address inode_to_dealloc = 2;
+    constexpr int32_t inode_to_dealloc = 2;
     EXPECT_EQ(fs->remove_file(inode_to_dealloc), inode_to_dealloc);
     EXPECT_FALSE(fs->get_inode_bitmap().get_status(inode_to_dealloc));
 
@@ -323,13 +323,13 @@ TEST_P(FileSystemTest, dealloc_inode) {
             n_dealocated_blocks++;
         }
     }
-    constexpr fsize n_indirect_data_blocks = 5;
+    constexpr int32_t n_indirect_data_blocks = 5;
     EXPECT_EQ(n_dealocated_blocks, ref_nested_inode_n_ptrs + n_indirect_data_blocks);
 }
 
 TEST_P(FileSystemTest, rename_inode) {
     constexpr const char* file_name_ref = "test_inode name_ref";
-    address addr = fs->create_file(file_name_ref);
+    int32_t addr = fs->create_file(file_name_ref);
 
     char file_name[meta_max_file_name_size] = {};
     fs->get_file_name(addr, file_name);
@@ -344,99 +344,99 @@ TEST_P(FileSystemTest, rename_inode) {
 
 TEST_P(FileSystemTest, read_invalid_inode) {
     DataBufferType rdata(1);
-    address invalid_inode = MB.n_inode_blocks - 1;
+    int32_t invalid_inode = MB.n_inode_blocks - 1;
     EXPECT_EQ(fs->read(invalid_inode, rdata.data(), 0, 1), fs_nullptr);
 }
 
 TEST_P(FileSystemTest, read_full_file) {
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     DataBufferType rdata(data_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
     fs->write(inode_n, ref_data.data(), 0, data_len);
 
-    fsize n_read = fs->read(inode_n, rdata.data(), 0, data_len);
+    int32_t n_read = fs->read(inode_n, rdata.data(), 0, data_len);
     EXPECT_EQ(n_read, data_len);
 
     EXPECT_TRUE(cmp_data(rdata, ref_data));
 }
 
 TEST_P(FileSystemTest, read_less_than_block) {
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     DataBufferType rdata(data_len);
     fill_dummy(ref_data);
 
     auto to_read = block_size / 2;
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
     fs->write(inode_n, ref_data.data(), 0, to_read);
 
-    fsize n_read = fs->read(inode_n, rdata.data(), 0, to_read);
+    int32_t n_read = fs->read(inode_n, rdata.data(), 0, to_read);
     EXPECT_EQ(n_read, to_read);
 
     EXPECT_TRUE(cmp_data(rdata.data(), ref_data.data(), n_read));
 }
 
 TEST_P(FileSystemTest, read_offset_within_one_block) {
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     DataBufferType rdata(data_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
     fs->write(inode_n, ref_data.data(), 0, data_len);
 
     auto offset = block_size / 4;
-    fsize n_read = fs->read(inode_n, rdata.data(), offset, block_size - offset);
+    int32_t n_read = fs->read(inode_n, rdata.data(), offset, block_size - offset);
     EXPECT_EQ(n_read, block_size - offset);
 
     EXPECT_TRUE(cmp_data(rdata.data(), &ref_data[offset], n_read));
 }
 
 TEST_P(FileSystemTest, read_offset_and_rest_of_the_file) {
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     DataBufferType rdata(data_len);
     fill_dummy(ref_data);
 
     auto offset = block_size / 4;
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
     fs->write(inode_n, ref_data.data(), 0, data_len);
 
-    fsize n_read = fs->read(inode_n, rdata.data(), offset, data_len);
+    int32_t n_read = fs->read(inode_n, rdata.data(), offset, data_len);
     EXPECT_EQ(n_read, data_len - offset);
 
     EXPECT_TRUE(cmp_data(rdata.data(), &ref_data[offset], n_read));
 }
 
 TEST_P(FileSystemTest, read_offset_length_greater_than_file_length) {
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     DataBufferType rdata(data_len);
     fill_dummy(ref_data);
 
     auto offset = block_size / 4 + block_size;
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
     fs->write(inode_n, ref_data.data(), 0, data_len);
 
-    fsize n_read = fs->read(inode_n, rdata.data(), offset, data_len);
+    int32_t n_read = fs->read(inode_n, rdata.data(), offset, data_len);
     EXPECT_EQ(n_read, data_len - offset);
 
     EXPECT_TRUE(cmp_data(rdata.data(), &ref_data[offset], n_read));
 }
 
 TEST_P(FileSystemTest, read_offset_greater_than_length) {
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     DataBufferType rdata(data_len);
     fill_dummy(ref_data);
 
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
     fs->write(inode_n, ref_data.data(), 0, data_len);
 
-    fsize n_read = fs->read(inode_n, rdata.data(), data_len - 1, data_len);
+    int32_t n_read = fs->read(inode_n, rdata.data(), data_len - 1, data_len);
     EXPECT_EQ(n_read, 1);
 
     EXPECT_TRUE(cmp_data(rdata.data(), &ref_data[data_len - 1], n_read));
@@ -444,16 +444,16 @@ TEST_P(FileSystemTest, read_offset_greater_than_length) {
 
 TEST_P(FileSystemTest, read_buffer_content_consistency) {
     constexpr auto guard_value = static_cast<DataBufferType::value_type>(0xDEAD);
-    fsize data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
+    int32_t data_len = block_size * meta_n_direct_ptrs + 2 * block_size;
     DataBufferType ref_data(data_len);
     DataBufferType rdata(data_len, guard_value);
     fill_dummy(ref_data);
 
     auto data_to_read = data_len / 2;
-    address inode_n = fs->create_file(valid_file_name);
+    int32_t inode_n = fs->create_file(valid_file_name);
     fs->write(inode_n, ref_data.data(), 0, data_len);
 
-    fsize n_read = fs->read(inode_n, rdata.data(), 0, data_to_read);
+    int32_t n_read = fs->read(inode_n, rdata.data(), 0, data_to_read);
     EXPECT_EQ(n_read, data_to_read);
 
     EXPECT_TRUE(cmp_data(rdata.data(), ref_data.data(), n_read));

@@ -56,7 +56,7 @@ void event_write_data(const char* disk_path, int block_size, const char* file_na
         fs.mount();
         // TODO
         fs.unmount();
-        fprintf(stdout, "%d bytes of data written from %s\n", 0, file_name);
+        fprintf(stdout, "%d bytes of uint8_t written from %s\n", 0, file_name);
     } catch (const std::exception& e) {
         display_critical_error(e);
     }
@@ -71,7 +71,7 @@ void event_read_data(const char* disk_path, int block_size, const char* file_nam
         fs.mount();
         // TODO
         fs.unmount();
-        fprintf(stdout, "%d bytes of data writen to %s.\n", 0, file_name);
+        fprintf(stdout, "%d bytes of uint8_t writen to %s.\n", 0, file_name);
     } catch (const std::exception& e) {
         display_critical_error(e);
     }

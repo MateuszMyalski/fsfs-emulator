@@ -15,7 +15,7 @@ void Block::resize() {
 
 Block::~Block() { disk.unmount(); }
 
-address Block::read_block(address block_n) {
+int32_t Block::read_block(int32_t block_n) {
     if (block_n == casched_block) {
         return block_n;
     }
@@ -29,9 +29,9 @@ address Block::read_block(address block_n) {
     return block_n;
 }
 
-fsize Block::write(address block_n, const data* wdata, fsize offset, fsize length) {
+int32_t Block::write(int32_t block_n, const uint8_t* wdata, int32_t offset, int32_t length) {
     if (block_n >= MB.n_blocks || block_n < 0) {
-        throw std::invalid_argument("Invalid data block number.");
+        throw std::invalid_argument("Invalid uint8_t block number.");
     }
 
     if (std::abs(offset) >= MB.block_size) {
@@ -46,8 +46,8 @@ fsize Block::write(address block_n, const data* wdata, fsize offset, fsize lengt
         return length;
     }
 
-    fsize real_offset = offset >= 0 ? offset : MB.block_size + offset;
-    fsize writtable_space = MB.block_size - real_offset;
+    int32_t real_offset = offset >= 0 ? offset : MB.block_size + offset;
+    int32_t writtable_space = MB.block_size - real_offset;
     length = std::min(length, writtable_space);
 
     read_block(block_n);
@@ -60,17 +60,17 @@ fsize Block::write(address block_n, const data* wdata, fsize offset, fsize lengt
     return length;
 }
 
-fsize Block::read(address block_n, data* rdata, fsize offset, fsize length) {
+int32_t Block::read(int32_t block_n, uint8_t* rdata, int32_t offset, int32_t length) {
     if (block_n >= MB.n_blocks || block_n < 0) {
-        throw std::invalid_argument("Invalid data block number.");
+        throw std::invalid_argument("Invalid uint8_t block number.");
     }
 
     if (std::abs(offset) >= MB.block_size) {
         throw std::invalid_argument("Offest cannot be equal or greater than block size.");
     }
 
-    fsize real_offset = offset >= 0 ? offset : MB.block_size + offset;
-    fsize readable_space = MB.block_size - real_offset;
+    int32_t real_offset = offset >= 0 ? offset : MB.block_size + offset;
+    int32_t readable_space = MB.block_size - real_offset;
     if (length > readable_space || length < 0) {
         throw std::invalid_argument(
             "Length cannot be greater than readable space and lower than "
@@ -86,15 +86,15 @@ fsize Block::read(address block_n, data* rdata, fsize offset, fsize length) {
     return length;
 }
 
-address Block::data_n_to_block_n(address data_n) {
+int32_t Block::data_n_to_block_n(int32_t data_n) {
     if (data_n >= MB.n_data_blocks || data_n < 0) {
-        throw std::invalid_argument("Invalid data block number.");
+        throw std::invalid_argument("Invalid uint8_t block number.");
     }
 
     return data_n + MB.n_inode_blocks + fs_offset_inode_block;
 }
 
-address Block::inode_n_to_block_n(address inode_n) {
+int32_t Block::inode_n_to_block_n(int32_t inode_n) {
     if (inode_n >= MB.n_inode_blocks || inode_n < 0) {
         throw std::invalid_argument("Invalid inode block number.");
     }
@@ -102,15 +102,15 @@ address Block::inode_n_to_block_n(address inode_n) {
     return inode_n / get_n_inodes_in_block() + fs_offset_inode_block;
 }
 
-fsize Block::get_n_inodes_in_block() { return MB.block_size / meta_fragm_size_bytes; }
+int32_t Block::get_n_inodes_in_block() { return MB.block_size / meta_fragm_size_bytes; }
 
-fsize Block::get_n_addreses_in_block() { return MB.block_size / sizeof(address); }
+int32_t Block::get_n_addreses_in_block() { return MB.block_size / sizeof(int32_t); }
 
-fsize Block::get_block_size() { return MB.block_size; }
+int32_t Block::get_block_size() { return MB.block_size; }
 
-fsize Block::bytes_to_blocks(fsize length) {
+int32_t Block::bytes_to_blocks(int32_t length) {
     length = std::max(0, length);
-    fsize n_ptrs_used = length / MB.block_size;
+    int32_t n_ptrs_used = length / MB.block_size;
     n_ptrs_used += length % MB.block_size ? 1 : 0;
     return n_ptrs_used;
 }

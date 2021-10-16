@@ -3,11 +3,11 @@
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class BlockTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
+class BlockTest : public ::testing::TestWithParam<int32_t>, public TestBaseFileSystem {
    protected:
     std::unique_ptr<Block> block;
-    address data_n = 0;
-    address block_n = fs_offset_inode_block + MB.n_inode_blocks + data_n;
+    int32_t data_n = 0;
+    int32_t block_n = fs_offset_inode_block + MB.n_inode_blocks + data_n;
     DataBufferType ref_data;
     DataBufferType rdata;
 
@@ -31,7 +31,7 @@ TEST_P(BlockTest, inode_n_to_block_n_throw_invalid_block) {
 }
 
 TEST_P(BlockTest, inode_n_to_block_n) {
-    fsize n_meta_blocks_in_block = block_size / meta_fragm_size_bytes;
+    int32_t n_meta_blocks_in_block = block_size / meta_fragm_size_bytes;
 
     EXPECT_EQ(block->inode_n_to_block_n(0), fs_offset_inode_block);
     EXPECT_EQ(block->inode_n_to_block_n(1), fs_offset_inode_block);
@@ -49,36 +49,36 @@ TEST_P(BlockTest, data_n_to_block_n) {
 }
 
 TEST_P(BlockTest, write_throw_invalid_block_number) {
-    data dummy_data = 0x00;
+    uint8_t dummy_data = 0x00;
     EXPECT_THROW(block->write(MB.n_blocks, &dummy_data, 0, 0), std::invalid_argument);
     EXPECT_THROW(block->write(-1, &dummy_data, 0, 0), std::invalid_argument);
 }
 
 TEST_P(BlockTest, write_throw_invalid_offset) {
-    data dummy_data = 0x00;
+    uint8_t dummy_data = 0x00;
     EXPECT_THROW(block->write(0, &dummy_data, block_size, 0), std::invalid_argument);
     EXPECT_THROW(block->write(0, &dummy_data, -block_size, 0), std::invalid_argument);
 }
 
 TEST_P(BlockTest, write_throw_invalid_length) {
-    data dummy_data = 0x00;
+    uint8_t dummy_data = 0x00;
     EXPECT_THROW(block->write(0, &dummy_data, 0, -1), std::invalid_argument);
 }
 
 TEST_P(BlockTest, read_throw_invalid_block_number) {
-    data dummy_data = 0x00;
+    uint8_t dummy_data = 0x00;
     EXPECT_THROW(block->read(MB.n_blocks, &dummy_data, 0, 0), std::invalid_argument);
     EXPECT_THROW(block->read(-1, &dummy_data, 0, 0), std::invalid_argument);
 }
 
 TEST_P(BlockTest, read_throw_invalid_block_offset) {
-    data dummy_data = 0x00;
+    uint8_t dummy_data = 0x00;
     EXPECT_THROW(block->read(0, &dummy_data, block_size, 0), std::invalid_argument);
     EXPECT_THROW(block->read(0, &dummy_data, -block_size, 0), std::invalid_argument);
 }
 
 TEST_P(BlockTest, read_throw_invalid_length) {
-    data dummy_data = 0x00;
+    uint8_t dummy_data = 0x00;
     EXPECT_THROW(block->read(0, &dummy_data, 0, -1), std::invalid_argument);
     EXPECT_THROW(block->read(0, &dummy_data, 0, block_size + 1), std::invalid_argument);
     EXPECT_THROW(block->read(0, &dummy_data, -2, 3), std::invalid_argument);
@@ -96,7 +96,7 @@ TEST_P(BlockTest, write_basic_write) {
 }
 
 TEST_P(BlockTest, write_with_offset_and_overflow) {
-    constexpr fsize overflow_length = 1;
+    constexpr int32_t overflow_length = 1;
     auto n_written = block->write(block_n, ref_data.data(), block_size / 2, ref_data.size() + overflow_length);
     ASSERT_EQ(n_written, block_size - block_size / 2);
 
@@ -107,7 +107,7 @@ TEST_P(BlockTest, write_with_offset_and_overflow) {
 }
 
 TEST_P(BlockTest, write_with_end_offset) {
-    constexpr const data data_fragm[] = "abcdef";
+    constexpr const uint8_t data_fragm[] = "abcdef";
     auto n_written = block->write(block_n, ref_data.data(), 0, ref_data.size());
     n_written = block->write(block_n, data_fragm, -3, 2);
     ASSERT_EQ(n_written, 2);

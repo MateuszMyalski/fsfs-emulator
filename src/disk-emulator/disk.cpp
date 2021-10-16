@@ -6,7 +6,7 @@
 
 namespace FSFS {
 
-Disk::Disk(fsize block_size) : mounted(0), block_size(block_size) {
+Disk::Disk(int32_t block_size) : mounted(0), block_size(block_size) {
     if ((block_size % quant_block_size) != 0) {
         throw std::invalid_argument("Block size must be multiplication of 1024.");
     }
@@ -33,21 +33,21 @@ void Disk::open(const char* path) {
     }
 }
 
-void Disk::create(const char* path, fsize n_blocks, fsize block_size) {
+void Disk::create(const char* path, int32_t n_blocks, int32_t block_size) {
     std::fstream disk(path, std::ios::out | std::ios::binary);
-    fsize disk_size = block_size * n_blocks;
+    int32_t disk_size = block_size * n_blocks;
 
     disk.seekp(disk_size - 1);
     disk.write("", 1);
 }
 
-fsize Disk::write(address block_n, const data* data_block, fsize data_len) {
+int32_t Disk::write(int32_t block_n, const uint8_t* data_block, int32_t data_len) {
     if (!(disk_img.is_open() && is_mounted())) {
         return -1;
     }
 
-    address offset = block_n * block_size;
-    fsize data_overflow = std::min(0, disk_img_size - (offset + data_len));
+    int32_t offset = block_n * block_size;
+    int32_t data_overflow = std::min(0, disk_img_size - (offset + data_len));
     data_len -= std::abs(data_overflow);
 
     disk_img.seekp(offset, disk_img.beg);
@@ -56,13 +56,13 @@ fsize Disk::write(address block_n, const data* data_block, fsize data_len) {
     return data_len;
 }
 
-fsize Disk::read(address block_n, data* data_block, fsize data_len) {
+int32_t Disk::read(int32_t block_n, uint8_t* data_block, int32_t data_len) {
     if (!(disk_img.is_open() && is_mounted())) {
         return -1;
     }
 
-    address offset = block_n * block_size;
-    fsize data_overflow = std::min(0, disk_img_size - (offset + data_len));
+    int32_t offset = block_n * block_size;
+    int32_t data_overflow = std::min(0, disk_img_size - (offset + data_len));
     data_len -= std::abs(data_overflow);
 
     disk_img.seekg(offset, disk_img.beg);

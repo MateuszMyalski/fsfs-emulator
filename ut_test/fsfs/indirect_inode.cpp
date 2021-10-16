@@ -6,17 +6,17 @@
 
 using namespace FSFS;
 namespace {
-class IndirectInodeTest : public ::testing::TestWithParam<fsize>, public TestBaseFileSystem {
+class IndirectInodeTest : public ::testing::TestWithParam<int32_t>, public TestBaseFileSystem {
    protected:
     std::unique_ptr<IndirectInode> indirect_inode;
     std::unique_ptr<Block> block;
     inode_block inode;
-    std::vector<address> ptrs;
+    std::vector<int32_t> ptrs;
 
-    address indirect0_data_block = 9;
-    address indirect1_data_block = 5;
-    address indirect2_data_block = 8;
-    address indirect3_data_block = fs_nullptr;
+    int32_t indirect0_data_block = 9;
+    int32_t indirect1_data_block = 5;
+    int32_t indirect2_data_block = 8;
+    int32_t indirect3_data_block = fs_nullptr;
 
    public:
     void SetUp() override {
@@ -39,9 +39,9 @@ class IndirectInodeTest : public ::testing::TestWithParam<fsize>, public TestBas
     }
 
    private:
-    void store_indirect(address block_n, address* ptrs_list, address next_indirect_addr) {
-        block->write(block_n, cast_to_data(ptrs_list), 0, block_size - sizeof(address));
-        block->write(block_n, cast_to_data(&next_indirect_addr), block_size - sizeof(address), sizeof(address));
+    void store_indirect(int32_t block_n, int32_t* ptrs_list, int32_t next_indirect_addr) {
+        block->write(block_n, cast_to_data(ptrs_list), 0, block_size - sizeof(int32_t));
+        block->write(block_n, cast_to_data(&next_indirect_addr), block_size - sizeof(int32_t), sizeof(int32_t));
     }
 };
 
@@ -57,7 +57,7 @@ TEST_P(IndirectInodeTest, add_data_and_commit) {
     BlockBitmap data_bitmap(MB.n_data_blocks);
     indirect_inode->load(*block);
 
-    std::vector<address> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
+    std::vector<int32_t> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
     fill_dummy(new_ptrs);
     new_ptrs_list.insert_after(new_ptrs_list.before_begin(), new_ptrs.begin(), new_ptrs.end());
 
@@ -79,7 +79,7 @@ TEST_P(IndirectInodeTest, add_data_and_last_indirect_ptr) {
     BlockBitmap data_bitmap(MB.n_data_blocks);
     indirect_inode->load(*block);
 
-    std::vector<address> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
+    std::vector<int32_t> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
     fill_dummy(new_ptrs);
     new_ptrs_list.insert_after(new_ptrs_list.before_begin(), new_ptrs.begin(), new_ptrs.end());
 
@@ -127,7 +127,7 @@ TEST_P(IndirectInodeTest, add_data_and_commit_with_no_free_space) {
         data_bitmap.set_status(i, 1);
     }
 
-    std::vector<address> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
+    std::vector<int32_t> new_ptrs((n_indirect_ptrs_in_block - 1) * 2);
     fill_dummy(new_ptrs);
     new_ptrs_list.insert_after(new_ptrs_list.before_begin(), new_ptrs.begin(), new_ptrs.end());
 

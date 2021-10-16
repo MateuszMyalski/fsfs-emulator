@@ -18,7 +18,7 @@ inode_block& Inode::meta() {
     return inode_buf;
 }
 
-address Inode::ptr(address ptr_n) const {
+int32_t Inode::ptr(int32_t ptr_n) const {
     if (loaded_inode_n == fs_nullptr) {
         throw std::runtime_error("Inode not initialized.");
     }
@@ -30,18 +30,18 @@ address Inode::ptr(address ptr_n) const {
     return indirect_inode.ptr(ptr_n - meta_n_direct_ptrs);
 }
 
-void Inode::add_data(address new_data_n) { ptrs_to_allocate.push_front(new_data_n); }
+void Inode::add_data(int32_t new_data_n) { ptrs_to_allocate.push_front(new_data_n); }
 
-void Inode::load_direct(address inode_n, Block& data_block) {
-    address block_n = data_block.inode_n_to_block_n(inode_n);
-    fsize offset = inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size_bytes;
-    data* data_inode_p = cast_to_data(&inode);
+void Inode::load_direct(int32_t inode_n, Block& data_block) {
+    int32_t block_n = data_block.inode_n_to_block_n(inode_n);
+    int32_t offset = inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size_bytes;
+    uint8_t* data_inode_p = cast_to_data(&inode);
 
     data_block.read(block_n, data_inode_p, offset, meta_fragm_size_bytes);
     memcpy(&inode_buf, &inode, sizeof(inode_block));
 }
 
-void Inode::load(address inode_n, Block& data_block) {
+void Inode::load(int32_t inode_n, Block& data_block) {
     if (loaded_inode_n == inode_n) {
         return;
     }
@@ -60,7 +60,7 @@ void Inode::clear() {
     indirect_inode.clear();
 }
 
-void Inode::alloc_new(address inode_n) {
+void Inode::alloc_new(int32_t inode_n) {
     clear();
 
     loaded_inode_n = inode_n;
@@ -68,33 +68,33 @@ void Inode::alloc_new(address inode_n) {
     inode_buf.file_len = 0;
     inode_buf.file_name[0] = '\0';
     inode_buf.indirect_inode_ptr = fs_nullptr;
-    for (address i = 0; i < meta_n_direct_ptrs; i++) {
+    for (int32_t i = 0; i < meta_n_direct_ptrs; i++) {
         inode_buf.direct_ptr[i] = fs_nullptr;
     }
 
     memcpy(&inode, &inode_buf, sizeof(inode_block));
 }
 
-address Inode::last_indirect_ptr(address indirect_ptr_n) const {
+int32_t Inode::last_indirect_ptr(int32_t indirect_ptr_n) const {
     return indirect_inode.last_indirect_ptr(indirect_ptr_n);
 }
 
-fsize Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
+int32_t Inode::commit(Block& data_block, BlockBitmap& data_bitmap) {
     if (loaded_inode_n == fs_nullptr) {
         return 0;
     }
 
-    ptrs_to_allocate.reverse();  // Adding data to the forward list is in reversed order
-    fsize n_ptrs_written = 0;
+    ptrs_to_allocate.reverse();  // Adding uint8_t to the forward list is in reversed order
+    int32_t n_ptrs_written = 0;
 
-    address addr = data_block.inode_n_to_block_n(loaded_inode_n);
-    fsize inode_n_offset = loaded_inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size_bytes;
-    fsize ptrs_used = data_block.bytes_to_blocks(inode.file_len);
+    int32_t addr = data_block.inode_n_to_block_n(loaded_inode_n);
+    int32_t inode_n_offset = loaded_inode_n % data_block.get_n_inodes_in_block() * meta_fragm_size_bytes;
+    int32_t ptrs_used = data_block.bytes_to_blocks(inode.file_len);
     while (!ptrs_to_allocate.empty()) {
         if (ptrs_used >= meta_n_direct_ptrs) {
             if (inode.indirect_inode_ptr == fs_nullptr) {
                 // No more direct ptr slots, allocate new indirect slot if needed or use already alloceted one
-                address new_block_n = data_bitmap.next_free(0);
+                int32_t new_block_n = data_bitmap.next_free(0);
                 if (new_block_n == fs_nullptr) {
                     break;
                 }

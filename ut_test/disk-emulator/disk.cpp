@@ -4,7 +4,7 @@
 #include "test_base.hpp"
 using namespace FSFS;
 namespace {
-class DiskTest : public ::testing::TestWithParam<fsize>, public TestBaseDisk {
+class DiskTest : public ::testing::TestWithParam<int32_t>, public TestBaseDisk {
    private:
     std::vector<std::string_view> created_files;
 
@@ -29,10 +29,10 @@ class DiskTest : public ::testing::TestWithParam<fsize>, public TestBaseDisk {
         created_files.push_back(file_name);
     }
 
-    void fill_file(std::string_view file_name, int32_t offset, data* data, int32_t len) {
+    void fill_file(std::string_view file_name, int32_t offset, uint8_t* uint8_t, int32_t len) {
         std::fstream file(file_name.data(), std::ios::out | std::ios::binary);
         file.seekp(offset);
-        file.write(reinterpret_cast<char*>(data), len);
+        file.write(reinterpret_cast<char*>(uint8_t), len);
         file.close();
     }
 };
@@ -171,7 +171,7 @@ TEST_P(DiskTest, write_and_read_test_unchanged_other_blocks) {
     fill_file(ut_tmp_disk_name, 0, ref_data.data(), tmp_disk_size);
 
     /* Guard value should remain unchanged after not full read */
-    constexpr data guard_value = 0xFF;
+    constexpr uint8_t guard_value = 0xFF;
     memset(&r_data[tmp_disk_size - block_size], guard_value, block_size);
 
     disk.open(ut_tmp_disk_name);

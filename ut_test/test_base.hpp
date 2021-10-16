@@ -11,24 +11,24 @@
 
 namespace FSFS {
 
-constexpr fsize block_size_quant = 1024;
-const fsize valid_block_sizes[] = {block_size_quant, block_size_quant * 2, block_size_quant * 3, block_size_quant * 4};
-class TestBaseBasic : public testing::WithParamInterface<fsize> {
+constexpr int32_t block_size_quant = 1024;
+const int32_t valid_block_sizes[] = {block_size_quant, block_size_quant * 2, block_size_quant * 3, block_size_quant * 4};
+class TestBaseBasic : public testing::WithParamInterface<int32_t> {
    protected:
-    fsize block_size = GetParam();
-    fsize n_blocks = GetParam() * (GetParam() / block_size_quant + 1);
-    fsize disk_size = block_size * n_blocks;
+    int32_t block_size = GetParam();
+    int32_t n_blocks = GetParam() * (GetParam() / block_size_quant + 1);
+    int32_t disk_size = block_size * n_blocks;
     constexpr static char disk_name[] = "_tmp_disk.img";
 
     constexpr static auto rnd_seed = 0xCAFE;
 
    public:
-    using DataBufferType = std::vector<data>;
+    using DataBufferType = std::vector<uint8_t>;
 
     template <typename T>
-    void fill_dummy(T& data) {
+    void fill_dummy(T& uint8_t) {
         srand(rnd_seed);
-        for (auto& el : data) {
+        for (auto& el : uint8_t) {
             int rnd_data = rand();
             el = static_cast<typeof(el)>(rnd_data);
         }
@@ -67,8 +67,8 @@ class TestBaseFileSystem : public TestBaseDisk {
    protected:
     super_block MB;
     FileSystem file_system;
-    const fsize n_meta_blocks_in_block = block_size / meta_fragm_size_bytes;
-    const fsize n_indirect_ptrs_in_block = block_size / sizeof(address);
+    const int32_t n_meta_blocks_in_block = block_size / meta_fragm_size_bytes;
+    const int32_t n_indirect_ptrs_in_block = block_size / sizeof(int32_t);
 
    public:
     TestBaseFileSystem() : TestBaseDisk(), file_system(disk) {

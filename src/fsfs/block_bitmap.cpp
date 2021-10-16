@@ -3,26 +3,26 @@
 #include <stdexcept>
 
 namespace FSFS {
-inline address BlockBitmap::calc_pos(address block_n) const {
+inline int32_t BlockBitmap::calc_pos(int32_t block_n) const {
     auto row = block_n / bitmap_row_length;
     return block_n - (bitmap_row_length * row);
 }
 
-bitmap_t* BlockBitmap::get_map_row(address block_n) {
+bitmap_t* BlockBitmap::get_map_row(int32_t block_n) {
     if (block_n >= n_blocks || block_n < 0) {
         throw std::invalid_argument("Block idx out of bound.");
     }
     return &bitmap.at(block_n / bitmap_row_length);
 }
 
-const bitmap_t& BlockBitmap::get_map_row(address block_n) const {
+const bitmap_t& BlockBitmap::get_map_row(int32_t block_n) const {
     if (block_n >= n_blocks || block_n < 0) {
         throw std::invalid_argument("Block idx out of bound.");
     }
     return bitmap.at(block_n / bitmap_row_length);
 }
 
-void BlockBitmap::resize(address n_blocks) {
+void BlockBitmap::resize(int32_t n_blocks) {
     if (n_blocks <= 0) {
         throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
@@ -30,7 +30,7 @@ void BlockBitmap::resize(address n_blocks) {
     // Step 1: calculate needed space and prepare free
     //
     this->n_blocks = n_blocks;
-    fsize map_size = n_blocks / bitmap_row_length;
+    int32_t map_size = n_blocks / bitmap_row_length;
     if ((n_blocks - map_size * bitmap_row_length) > 0) {
         map_size += 1;
     }
@@ -39,12 +39,12 @@ void BlockBitmap::resize(address n_blocks) {
 
     // Step 2: Set as no free additional unused blocks
     //
-    fsize n_unused_bits = map_size * bitmap_row_length - n_blocks;
+    int32_t n_unused_bits = map_size * bitmap_row_length - n_blocks;
     bitmap_t unused_bits_mask = (1UL << n_unused_bits) - 1;
     bitmap.at(map_size - 1) = unused_bits_mask << (std::numeric_limits<bitmap_t>::digits - n_unused_bits - 1);
 }
 
-void BlockBitmap::set_status(address block_n, bool status) {
+void BlockBitmap::set_status(int32_t block_n, bool status) {
     if (block_n < 0) {
         throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
@@ -64,7 +64,7 @@ void BlockBitmap::set_status(address block_n, bool status) {
     }
 }
 
-bool BlockBitmap::get_status(address block_n) const {
+bool BlockBitmap::get_status(int32_t block_n) const {
     if (block_n < 0) {
         throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
@@ -80,7 +80,7 @@ bool BlockBitmap::get_status(address block_n) const {
     return block_map & (mask >> mask_shift);
 }
 
-address BlockBitmap::next_free(address block_offset) const {
+int32_t BlockBitmap::next_free(int32_t block_offset) const {
     if (block_offset < 0) {
         throw std::invalid_argument("Size number cannot be equal or lower than 0.");
     }
@@ -106,8 +106,8 @@ address BlockBitmap::next_free(address block_offset) const {
 
     // Step 3: Find free block in row
     //
-    address pos_offset = calc_pos(block_offset);
-    address real_idx = row * bitmap_row_length + pos_offset;
+    int32_t pos_offset = calc_pos(block_offset);
+    int32_t real_idx = row * bitmap_row_length + pos_offset;
     for (auto i = pos_offset; i < bitmap_row_length; i++) {
         if (!get_status(real_idx)) {
             break;
