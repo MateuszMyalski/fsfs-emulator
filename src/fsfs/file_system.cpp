@@ -299,7 +299,7 @@ int32_t FileSystem::rename_file(int32_t inode_n, const char* file_name) {
     }
 
     inode.load(inode_n, block);
-    memcpy(inode.meta().file_name, file_name, file_name_len);
+    strcpy(inode.meta().file_name, file_name);
     inode.commit(block, data_bitmap);
 
     return inode_n;

@@ -10,6 +10,7 @@
 #include "fsfs/file_system.hpp"
 
 namespace FSFS {
+constexpr size_t chunk_size = 4096;
 namespace {
 void display_critical_error(const std::exception& e) {
     printf("Critical error occured with message:\n\t%s\nAction terminated!\n", e.what());
@@ -33,23 +34,23 @@ void event_display_stats(const char* disk_path, int block_size, int inode_n) {
         auto block_bitmap = fs.get_data_bitmap();
 
         if (inode_n == -1) {
+            auto used_inode_blocks = 0;
+            for (auto i = 0; i < fs.get_inode_blocks_ammount(); i++) {
+                used_inode_blocks += inode_bitmap.get_status(i) ? 1 : 0;
+            }
+            auto used_data_blocks = 0;
+            for (auto i = 0; i < fs.get_data_blocks_ammount(); i++) {
+                used_data_blocks += block_bitmap.get_status(i) ? 1 : 0;
+            }
+
             printf("Disk stats:\n");
             printf("\tDisk block size: %d kb.\n", disk.get_block_size());
             printf("\tDisk total size: %d kb.\n", disk.get_disk_size());
             printf("\tInode blocks: %d segments.\n", fs.get_inode_blocks_ammount());
             printf("\tData blocks: %d segments.\n", fs.get_data_blocks_ammount());
-            // TODO add capacity info
-            printf("\tInode bitmap:\n");
-            // printf("\t[0] ");
-            // constexpr auto wrap_n = 16;
-            // for (auto i = 0; i < fs.get_inode_blocks_ammount();i ++) {
-            //     printf("%d ", inode_bitmap.get_status(i));
-            //     if ((i % wrap_n) == 0) {
-            //         printf("\n\t[%d] ", i);
-            //         // TODO add .. when all zeros
-            //     }
-            // }
-            // printf("\n");
+            printf("\tUsed inodes blocks: %d\n", used_inode_blocks);
+            printf("\tUsed data blocks: %d\n", used_data_blocks);
+
         } else {
             printf("File stats:\n");
             printf("\tFile inode number: %d\n", inode_n);
@@ -58,7 +59,7 @@ void event_display_stats(const char* disk_path, int block_size, int inode_n) {
                 char file_name_buf[32] = {};
                 fs.get_file_name(inode_n, file_name_buf);
                 printf("\tFile name: %s\n", file_name_buf);
-                printf("\tFile length: %d bytes", fs.get_file_length(inode_n));
+                printf("\tFile length: %d bytes\n", fs.get_file_length(inode_n));
             } else {
                 printf("\tInode empty. No file to display info.\n");
             }
@@ -119,7 +120,6 @@ void event_write_data(const char* disk_path, int block_size, const char* file_na
         // 2. Prepare buffor for file system
         //
         printf("Reading file...\n");
-        constexpr size_t chunk_size = 4096;
         char r_char_buffer[chunk_size];
 
         std::vector<uint8_t> r_buffer;
@@ -146,7 +146,6 @@ void event_write_data(const char* disk_path, int block_size, const char* file_na
         //
         size_t n_read = 0;
         size_t to_write = host_file_size;
-        printf("AAA %ld", to_write);
         while (to_write > 0) {
             // Calc the minimal chunk the file that can be read
             size_t to_read = std::min(chunk_size, to_write);
@@ -164,8 +163,6 @@ void event_write_data(const char* disk_path, int block_size, const char* file_na
         }
         printf("\n");
 
-        // 5. Close file on disk and host
-        //
         in_file.close();
         fs.unmount();
 
@@ -175,15 +172,66 @@ void event_write_data(const char* disk_path, int block_size, const char* file_na
     }
 }
 
-void event_read_data(const char* disk_path, int block_size, const char* file_name, int inode_n) {
+void event_read_data(const char* disk_path, int block_size, int inode_n) {
     try {
         Disk disk(block_size);
         disk.open(disk_path);
         FileSystem fs(disk);
         fs.mount();
-        // TODO
+
+        // 1. Check if file even exists
+        //
+        auto file_size = fs.get_file_length(inode_n);
+        if (file_size == -1) {
+            printf("File in inode number %d does not exists.\n", inode_n);
+            return;
+        }
+
+        // 2. Create file
+        //
+        char out_file_name[32] = {};
+        fs.get_file_name(inode_n, out_file_name);
+
+        printf("Creating file %s\n", out_file_name);
+        std::fstream out_file;
+        out_file.open(out_file_name, std::ios::out | std::ios::binary);
+        if (!out_file.is_open()) {
+            fs.unmount();
+            throw std::runtime_error("Unable to create file.");
+        }
+        out_file.seekg(0, std::ios::end);
+
+        // 3. Prepare buffers
+        char w_char_buffer[chunk_size];
+
+        std::vector<uint8_t> w_buffer;
+        w_buffer.resize(chunk_size * sizeof(char));
+
+        // 4. Read file and write to the end of host's file
+        //
+        size_t n_written = 0;
+        size_t to_read = file_size;
+        auto cnt = 0;
+        while (to_read > 0) {
+            // Calc the minimal chunk the file that can be read
+            size_t to_write = std::min(chunk_size, to_read);
+            to_read -= to_write;
+            if (fs.read(inode_n, w_buffer.data(), n_written, to_write) == -1) {
+                throw std::runtime_error("Cannot write to the filesystem image.");
+            }
+
+            // We cannot trust that char is 8-bits, we need to type pun here
+            memcpy(w_char_buffer, w_buffer.data(), chunk_size * sizeof(char));
+            out_file.write(w_char_buffer, to_write);
+            n_written += to_write;
+            printf("\rReading: [%ld/%d]", n_written, file_size);
+        }
+        printf("\n");
+
+        out_file.close();
         fs.unmount();
-        printf("%ld bytes of data writen to %s.\n", (size_t)0, file_name);
+
+        printf("%ld bytes of data writen to %s.\n", n_written, out_file_name);
     } catch (const std::exception& e) {
         display_critical_error(e);
     }
@@ -210,7 +258,6 @@ void event_rename_file(const char* disk_path, int block_size, int inode_n, const
         disk.open(disk_path);
         FileSystem fs(disk);
         fs.mount();
-
         fs.rename_file(inode_n, new_file_name);
         fs.unmount();
         printf("File renamed.\n");
@@ -220,6 +267,13 @@ void event_rename_file(const char* disk_path, int block_size, int inode_n, const
 }
 
 void event_format_disk(const char* disk_path, int block_size) {
+    printf("Thios will erease whiel disk, continue? [y/n] (n) ");
+    char ans = 'n';
+    std::cin >> ans;
+    if (tolower(ans) != 'y') {
+        return;
+    }
+
     try {
         Disk disk(block_size);
         disk.open(disk_path);
