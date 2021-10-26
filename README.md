@@ -1,4 +1,11 @@
-# WIP: fsfs-emulator
+# fsfs-emulator
+
+## CLI sample usage
+1. Create disk image `./fsFS -c dummy.img -b 1024 -s 102400`
+2. Write file `./fsFS -w dummy.img -b 1024 -i cat.jpg`
+3. List files `./fsFS -l dummy.img -b 1024`
+4. Rename file `./fsFS -q dummy.img -b 1024 -n 0 -i nice_cat.jpg`
+5. Read file `./fsFS -r dummy.img -b 1024 -n 0`
 
 ## DoD
 - **F**lash **S**imple **F**ile **S**ystem
@@ -6,10 +13,9 @@
     - [X] chunk size 1024kb
     - [X] chunk size 2048kb
     - [X] chunk size 4096kb
-  - [ ] C++ style interface
+  - [X] C++ style interface
     - [X] `read` - reads selected lenght of data from given inode with respect to given offset
     - [X] `write` - writes to inode with selected lenght of data with respect to offset, also allocate another inodes if necessary
-    - [ ] `stats` - print all reports of the file system 
     - [X] `format` - formats the disk and initialzie propper file system structure
     - [X] `mount` - checks the integrity of the file system
     - [X] `unmount` - free up the disk
@@ -29,11 +35,10 @@
     - [X] `mount` - sets the disk as mounted
     - [X] `unmount` - sets the disk as unmounted
 - CLI emulator
-  - [ ] displays all action that the file system can perfom
-  - [ ] pack files into the emulated disk
-  - [ ] unpack files from emulated disk
-  - [ ] displays found virtual disks
-  - [ ] displays stats of the disk and file system
+  - [X] displays all action that the file system can perfom
+  - [X] pack files into the emulated disk
+  - [X] unpack files from emulated disk
+  - [X] displays stats of the disk and file system
 - Tests
   - [X] Disk space emulator
     - [X] `create`
@@ -44,7 +49,6 @@
   - [X] File system
     - [X] `read`
     - [X] `write`
-    - [ ] `stats`
     - [X] `format`
     - [X] `mount`
     - [X] `unmount`
