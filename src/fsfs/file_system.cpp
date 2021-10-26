@@ -228,6 +228,10 @@ int32_t FileSystem::read(int32_t inode_n, uint8_t* rdata, int32_t offset, int32_
         length = inode.meta().file_len - offset;
     }
     int32_t offset_ptr = std::max(0, block.bytes_to_blocks(offset) - 1);
+    if(offset != 0 && offset % block.get_block_size() == 0){
+        // When reading by chunk, the offest can be at the end of previous block
+        offset_ptr += 1;
+    }
 
     // Step 3 : Read first block and attach to the rdata buffor
     //
